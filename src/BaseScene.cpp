@@ -89,7 +89,7 @@ bool BaseScene::OnCreate()
     }
 
     // Load music and sound effect
-    backgroundMusic = Mix_LoadMUS("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3");
+    backgroundMusic = Mix_LoadMUS("./src/audio/Mysterious Ambience.mp3");
     if (backgroundMusic == nullptr)
     {
         std::cout << "Failed to load background music! SDL_mixer Error: " << Mix_GetError() << std::endl;
@@ -112,17 +112,24 @@ bool BaseScene::OnCreate()
         cout << "Shader failed ... we have a problem\n";
     }
 
+
+    if (!TestEntity.addComponent<SpriteComponent>().LoadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40.0f, 100.0f, 1.0f), true, 32, 8, 100))
+    {
+        cout << "Sprite failed ... we have a problem\n";
+        return false;
+    }
+
+
     if (!background.addComponent<SpriteComponent>().LoadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350.0f, 200.0f, 0.0f)))
     {
         cout << "Sprite failed ... we have a problem\n";
         return false;
     }
 
-    if (!TestEntity.addComponent<SpriteComponent>().LoadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40.0f, 100.0f, 1.0f), true, 4, 8, 100))
-    {
-        cout << "Sprite failed ... we have a problem\n";
-        return false;
-    }
+    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkBack", 0, 7, 100);
+    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkLeft", 8, 15, 100);
+    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkRight", 16, 23, 100);
+    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkFront", 24, 31, 100);
 
     TestEntity.addComponent<ColliderComponent>().AddCircleCollider(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 60);
     Capsule.addComponent<ColliderComponent>().AddCapsuleCollider(TestEntity.getComponent<SpriteComponent>().X() + 300, TestEntity.getComponent<SpriteComponent>().Y(), 100, 200);
@@ -197,16 +204,23 @@ void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
             {
             case SDL_SCANCODE_W:
                 KeyboardY = 1;
+                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");
                 break;
             case SDL_SCANCODE_S:
                 KeyboardY = -1;
-
+                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");
                 break;
             case SDL_SCANCODE_A:
                 KeyboardX = -1;
+                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");
                 break;
             case SDL_SCANCODE_D:
                 KeyboardX = 1;
+                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");
                 break;
             default:
                 break;
@@ -218,10 +232,12 @@ void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
             case SDL_SCANCODE_W:
             case SDL_SCANCODE_S:
                 KeyboardY = 0;
+                if(KeyboardX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
                 break;
             case SDL_SCANCODE_A:
             case SDL_SCANCODE_D:
                 KeyboardX = 0;
+                if (KeyboardY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
                 break;
             default:
                 break;
@@ -257,20 +273,26 @@ void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
                 if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
                 {
                     leftStickX = sdlEvent.caxis.value;
+                    if(leftStickX > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");}
+                    if(leftStickX < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");}
                 }
                 else
                 {
                     leftStickX = 0;
+                    if(leftStickY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
                 }
                 break;
             case SDL_CONTROLLER_AXIS_LEFTY:
                 if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
                 {
                     leftStickY = sdlEvent.caxis.value;
+                    if(leftStickY < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");}
+                    if(leftStickY > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");}
                 }
                 else
                 {
                     leftStickY = 0;
+                    if (leftStickX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
                 }
                 break;
             }
@@ -285,6 +307,9 @@ void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
         }
         break;
     }
+
+
+
 }
 
 void KeyboardMovement()
@@ -310,6 +335,7 @@ void BaseScene::Update(const float deltaTime)
         return;
 
     // std::cout << "FPS: " << 1.0f / deltaTime << std::endl;
+    dt = deltaTime;
 
     TestEntity.getComponent<SpriteComponent>().Update(deltaTime);
     background.getComponent<SpriteComponent>().Update(deltaTime);

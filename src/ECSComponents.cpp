@@ -43,6 +43,11 @@ SpriteComponent::~SpriteComponent() {}
 bool SpriteComponent::OnCreate()
 {
 	SetupQuad();
+	shader = new Shader("./src/shaders/SpriteAnimations.vert", "./src/shaders/SpriteAnimations.frag");
+	if (shader->OnCreate() == false)
+	{
+		std::cout << "Shader failed ... we have a problem\n";
+	}
 	return true;
 }
 
@@ -53,10 +58,16 @@ void SpriteComponent::Update(float deltaTime)
 
 	if (isAnimated)
 	{
-		for (int i = 0; i < rows; i++)
+		if (!AnimationList.empty())
 		{
-			sx = sx + (image_width * i);
-			glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx);
+			timeSinceLastFrame += deltaTime;
+			if (timeSinceLastFrame >= frameDuration)
+			{
+				// currentFrame = (currentFrame + 1) % totalFrames;  // Loop through all frames
+				// currentFrame = (currentFrame + 1) % (15 - 8 + 1) + 8; // loop through frames 8 to 15
+				currentFrame = (currentFrame + 1) % (AnimationList.back().EndFrame - AnimationList.back().StartFrame + 1) + AnimationList.back().StartFrame;
+				timeSinceLastFrame = 0.0f;
+			}
 		}
 	}
 }
@@ -97,13 +108,14 @@ void SpriteComponent::SetupQuad()
 	glBindVertexArray(0);
 }
 
-bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _height, Vec3 _pos, bool _isAnimated, int _columns, int _rows, int _speed)
+bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _height, Vec3 _pos, bool _isAnimated, int _totalFrames, int _framesPerRow, int _speed, Camera _cam)
 {
 
 	isAnimated = _isAnimated;
 	image_width = _width;
 	image_height = _height;
 	filename = _filename;
+	cam = _cam;
 	pos = _pos;
 	int width, height, channels;
 	unsigned char *image_data = stbi_load(_filename, &width, &height, &channels, STBI_rgb_alpha);
@@ -127,47 +139,81 @@ bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _hei
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	if (_isAnimated)
-	{
-		int w = width / _rows;
-		int h = height / _columns;
 
-		columns = _columns;
-		rows = _rows;
-		speed = _speed;
-
-		glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
-		glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx);
-		glPixelStorei(GL_UNPACK_SKIP_ROWS, sy);
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // LodePNG tightly packs everything
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		stbi_image_free(image_data);
-
-		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-		glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	if(isAnimated){
+		framesPerRow = _framesPerRow;
+		totalFrames = _totalFrames;
 	}
-	else
-	{
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+	// if (_isAnimated)
+	//{
+	//	int w = width / _rows;
+	//	int h = height / _columns;
+	//
+	//	columns = _columns;
+	//	rows = _rows;
+	//	speed = _speed;
+	//
+	//	glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
+	//	glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx);
+	//	glPixelStorei(GL_UNPACK_SKIP_ROWS, sy);
+	//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // LodePNG tightly packs everything
+	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+	//	glGenerateMipmap(GL_TEXTURE_2D);
+	//
+	//	stbi_image_free(image_data);
+	//
+	//	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	//	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	//	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+	//	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	//}
+	// else
+	//{
+	//
+	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+	//	glGenerateMipmap(GL_TEXTURE_2D);
+	//
+	//	stbi_image_free(image_data);
+	//}
 
-		stbi_image_free(image_data);
-	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(image_data);
 
 	return true;
 }
 
 void SpriteComponent::Render() const
 {
+
+	if (isAnimated)
+		glUseProgram(shader->GetProgram());
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Enable alpha blending
+
+	if (isAnimated)
+		glUniformMatrix4fv(shader->GetUniformID("projection"), 1, GL_FALSE, cam.GetProjectionMatrix());
+	if (isAnimated)
+		glUniformMatrix4fv(shader->GetUniformID("view"), 1, GL_FALSE, cam.GetVeiwMatrix());
+	if (isAnimated)
+		glUniformMatrix4fv(shader->GetUniformID("model"), 1, GL_FALSE, modelMatrix);
+
 	glBindTexture(GL_TEXTURE_2D, texture);
+
+	if (isAnimated)
+	{
+		glUniform1i(shader->GetUniformID("currentFrame"), currentFrame);
+		glUniform1i(shader->GetUniformID("framesPerRow"), framesPerRow);
+		glUniform1i(shader->GetUniformID("totalFrames"), totalFrames);
+	}
+
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+
+	glUseProgram(0);
 }
 
 ColliderComponent::ColliderComponent() : ECSComponent(nullptr)

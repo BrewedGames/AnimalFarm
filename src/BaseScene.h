@@ -14,6 +14,8 @@ private:
 	bool IsPaused;
 	Camera cam;
 
+	float dt;
+
 	Matrix4 modelMatrix;
 	SDL_Renderer* screenRenderer;
 	SimpleShape shapeRenderer;

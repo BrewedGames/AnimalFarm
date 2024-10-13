@@ -17,11 +17,14 @@
 #include <map>
 #include <simpleini.h>
 
+#include "Shader.h"
+#include "Camera.h"
 
 using namespace MATH;
 
 class SpriteComponent : public ECSComponent
 {
+
 private:
 	float image_width, image_height;
 	const char *filename;
@@ -29,22 +32,36 @@ private:
 	Vec3 pos;
 	Matrix4 modelMatrix;
 
-
-
 	bool isAnimated = false;
 	int speed = 100; // in milliseconds higher is slower
 	int columns = 0; // top to bottom
-	int rows = 0; // left to right
+	int rows = 0;	 // left to right
 	int sx = 0, sy = 0;
 
 	int animationTime = 0;
+
 	int currentFrame = 0;
+	int totalFrames = 0;
+	int framesPerRow = 0;
+	float frameDuration = 0.1f;
+	float timeSinceLastFrame = 0.0f;
 
-	std::vector<unsigned char> spriteArray;
+	int AnimationStartFrame = 0;
+	int AnimationEndFrame = 0;
+	int AnimationSpeed = 0;
 
+	Camera cam;
 
+	Shader *shader;
 
+	struct Animation {
+		int StartFrame;
+		int EndFrame;
+		int Speed;
+	};
 
+	std::map<std::string, Animation> Animations;
+	std::vector<Animation> AnimationList;
 
 public:
 	SpriteComponent();
@@ -54,7 +71,15 @@ public:
 	void Update(float deltaTime);
 	void Render() const;
 	void SetupQuad();
-	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _columns = 0, int _rows = 0, int _speed = 100);
+	void SetAnimation(std::string _name, int _startFrame, int _endFrame, int _speed){
+		Animations[_name] = Animation{ _startFrame, _endFrame, _speed };
+	}
+	void PlayAnimation(std::string _name){
+
+		AnimationList.push_back(Animations[_name]);
+	};
+	void ClearAnimation(){ AnimationList.clear(); };
+	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _totalFrames = 0, int _framesPerRow = 0, int _speed = 100, Camera _cam = Camera());
 	Matrix4 GetModelMatrix() { return modelMatrix; };
 	Vec3 getPos() { return pos; };
 	void setPos(Vec3 _pos) { pos = _pos; };
