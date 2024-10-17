@@ -12,6 +12,8 @@
 #include <cmath>
 #include <VMath.h>
 
+
+
 #include <SDL_mixer.h>
 
 #include "imgui/imgui.h"
@@ -56,6 +58,9 @@ Mix_Chunk *soundEffect = nullptr;
 
 
 
+
+
+
 BaseScene::BaseScene() : drawInWireMode(false), IsPaused(false) {}
 
 BaseScene::~BaseScene() {}
@@ -89,7 +94,7 @@ bool BaseScene::OnCreate()
     }
 
     // Load music and sound effect
-    backgroundMusic = Mix_LoadMUS("./src/audio/Mysterious Ambience.mp3");
+    backgroundMusic = Mix_LoadMUS("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3");
     if (backgroundMusic == nullptr)
     {
         std::cout << "Failed to load background music! SDL_mixer Error: " << Mix_GetError() << std::endl;
@@ -135,6 +140,7 @@ bool BaseScene::OnCreate()
     Capsule.addComponent<ColliderComponent>().AddCapsuleCollider(TestEntity.getComponent<SpriteComponent>().X() + 300, TestEntity.getComponent<SpriteComponent>().Y(), 100, 200);
     Square.addComponent<ColliderComponent>().AddAABBCollider(700, 300, 100, 100);
     TestCollider.addComponent<ColliderComponent>().AddCircleCollider(500, 300, 100);
+
 
     return true;
 }
