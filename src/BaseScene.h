@@ -7,10 +7,13 @@ union SDL_Event;
 class Window;
 #include "Camera.h"
 
+#include "Bridge.h"
+
+
 class BaseScene : public Scene {
 private:
 	
-	bool drawInWireMode;
+	bool drawInWireMode = false;
 	bool IsPaused;
 	Camera cam;
 
@@ -20,7 +23,7 @@ private:
 	SDL_Renderer* screenRenderer;
 	SimpleShape shapeRenderer;
 
-	
+	Bridge bridge; 
 
 public:
 	explicit BaseScene();

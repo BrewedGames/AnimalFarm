@@ -1,16 +1,22 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-#include "ECSComponents.h"
 #define CUTE_C2_IMPLEMENTATION
-#include <cute_c2.h>
-using namespace MATH;
+#define TINYOBJLOADER_IMPLEMENTATION
 
+#include "tiny_obj_loader.h"
+#include "ECSComponents.h"
+
+#include <cute_c2.h>
+#include <stb_image.h>
 #include <fstream>
 #include <string.h>
 #include <SDL_image.h>
 #include <MMath.h>
 
 namespace fs = std::filesystem;
+using namespace MATH;
+
+
+
 
 // BodyComponent::BodyComponent(): ECSComponent(nullptr){
 // }
@@ -34,6 +40,78 @@ namespace fs = std::filesystem;
 //
 //
 
+AudioComponent::AudioComponent() : ECSComponent(nullptr)
+{
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+	{
+		std::cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
+		return;
+	}
+}
+AudioComponent::~AudioComponent()
+{
+	isMusic ? Mix_FreeMusic(audio.music) : Mix_FreeChunk(audio.sound);
+	if (isMusic)
+	{
+		audio.music = nullptr;
+	}
+	else
+	{
+		audio.sound = nullptr;
+	}
+	filename = nullptr;
+}
+void AudioComponent::setAudio(const char *_filename, bool _isMusic)
+{
+	filename = _filename;
+	isMusic = _isMusic;
+
+	isMusic ? audio.type = Audio::Type::Music : audio.type = Audio::Type::Sound;
+	if (isMusic)
+	{
+		audio.music = Mix_LoadMUS(filename);
+		if (audio.music == nullptr)
+		{
+			std::cout << "Failed to load music! SDL_mixer Error: " << Mix_GetError() << std::endl;
+		}
+	}
+	else
+	{
+		audio.sound = Mix_LoadWAV(filename);
+		if (audio.sound == nullptr)
+		{
+			std::cout << "Failed to load sound! SDL_mixer Error: " << Mix_GetError() << std::endl;
+		}
+	}
+}
+void AudioComponent::Play()
+{
+	isMusic ? Mix_PlayMusic(audio.music, isLoop ? -1 : 0) : Mix_PlayChannel(-1, audio.sound, isLoop ? -1 : 0);
+}
+void AudioComponent::Stop()
+{
+	isMusic ? Mix_HaltMusic() : Mix_HaltChannel(-1);
+}
+void AudioComponent::Pause()
+{
+	isMusic ? Mix_PauseMusic() : Mix_Pause(-1);
+}
+void AudioComponent::Resume()
+{
+	isMusic ? Mix_ResumeMusic() : Mix_Resume(-1);
+}
+void AudioComponent::SetVolume(float vol)
+{
+	volume = vol;
+	if (volume < 0.0f)
+		volume = 0.0f;
+	isMusic ? Mix_VolumeMusic(vol) : Mix_Volume(-1, vol);
+}
+
+void AudioComponent::Update(float deltaTime) {}
+void AudioComponent::Render() const {}
+void AudioComponent::OnDestroy() {}
+
 SpriteComponent::SpriteComponent() : ECSComponent(nullptr)
 {
 	pos = Vec3(0.0f, 0.0f, 0.0f);
@@ -43,11 +121,18 @@ SpriteComponent::~SpriteComponent() {}
 bool SpriteComponent::OnCreate()
 {
 	SetupQuad();
-	shader = new Shader("./src/shaders/SpriteAnimations.vert", "./src/shaders/SpriteAnimations.frag");
-	if (shader->OnCreate() == false)
+	animatedShader = new Shader("./src/shaders/SpriteAnimations.vert", "./src/shaders/SpriteAnimations.frag");
+	if (animatedShader->OnCreate() == false)
 	{
 		std::cout << "Shader failed ... we have a problem\n";
 	}
+
+	spriteShader = new Shader("./src/shaders/DefaultTextureShader.vert", "./src/shaders/DefaultTextureShader.frag");
+	if (spriteShader->OnCreate() == false)
+	{
+		std::cout << "Shader failed ... we have a problem\n";
+	}
+
 	return true;
 }
 
@@ -125,6 +210,7 @@ bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _hei
 		return false;
 	}
 
+	std::cout << "Texture ID for entity: " << texture << " " << filename << std::endl;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -139,43 +225,11 @@ bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _hei
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-
-	if(isAnimated){
+	if (isAnimated)
+	{
 		framesPerRow = _framesPerRow;
 		totalFrames = _totalFrames;
 	}
-
-	// if (_isAnimated)
-	//{
-	//	int w = width / _rows;
-	//	int h = height / _columns;
-	//
-	//	columns = _columns;
-	//	rows = _rows;
-	//	speed = _speed;
-	//
-	//	glPixelStorei(GL_UNPACK_ROW_LENGTH, width);
-	//	glPixelStorei(GL_UNPACK_SKIP_PIXELS, sx);
-	//	glPixelStorei(GL_UNPACK_SKIP_ROWS, sy);
-	//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // LodePNG tightly packs everything
-	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-	//
-	//	stbi_image_free(image_data);
-	//
-	//	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-	//	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-	//	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-	//	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-	//}
-	// else
-	//{
-	//
-	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-	//	glGenerateMipmap(GL_TEXTURE_2D);
-	//
-	//	stbi_image_free(image_data);
-	//}
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -188,25 +242,23 @@ bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _hei
 void SpriteComponent::Render() const
 {
 
-	if (isAnimated)
-		glUseProgram(shader->GetProgram());
+	isAnimated ? glUseProgram(animatedShader->GetProgram()) : glUseProgram(spriteShader->GetProgram());
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // Enable alpha blending
+	glDisable(GL_DEPTH_TEST);
 
-	if (isAnimated)
-		glUniformMatrix4fv(shader->GetUniformID("projection"), 1, GL_FALSE, cam.GetProjectionMatrix());
-	if (isAnimated)
-		glUniformMatrix4fv(shader->GetUniformID("view"), 1, GL_FALSE, cam.GetVeiwMatrix());
-	if (isAnimated)
-		glUniformMatrix4fv(shader->GetUniformID("model"), 1, GL_FALSE, modelMatrix);
+	isAnimated ? glUniformMatrix4fv(animatedShader->GetUniformID("projection"), 1, GL_FALSE, cam.GetProjectionMatrix()) : glUniformMatrix4fv(spriteShader->GetUniformID("projection"), 1, GL_FALSE, cam.GetProjectionMatrix());
+	isAnimated ? glUniformMatrix4fv(animatedShader->GetUniformID("view"), 1, GL_FALSE, cam.GetViewMatrix()) : glUniformMatrix4fv(spriteShader->GetUniformID("view"), 1, GL_FALSE, cam.GetViewMatrix());
+	isAnimated ? glUniformMatrix4fv(animatedShader->GetUniformID("model"), 1, GL_FALSE, modelMatrix) : glUniformMatrix4fv(spriteShader->GetUniformID("model"), 1, GL_FALSE, modelMatrix);
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	if (isAnimated)
 	{
-		glUniform1i(shader->GetUniformID("currentFrame"), currentFrame);
-		glUniform1i(shader->GetUniformID("framesPerRow"), framesPerRow);
-		glUniform1i(shader->GetUniformID("totalFrames"), totalFrames);
+		glUniform1i(animatedShader->GetUniformID("currentFrame"), currentFrame);
+		glUniform1i(animatedShader->GetUniformID("framesPerRow"), framesPerRow);
+		glUniform1i(animatedShader->GetUniformID("totalFrames"), totalFrames);
 	}
 
 	glBindVertexArray(VAO);
@@ -252,6 +304,8 @@ void ColliderComponent::Render() const
 		break;
 	}
 	}
+
+	glColor3f(1.0f, 1.0f, 1.0f);
 }
 
 Vec3 ColliderComponent::setPos(Vec3 _pos)
@@ -337,6 +391,183 @@ bool ColliderComponent::isColliding(ColliderComponent *other)
 	return false;
 }
 bool isCollidingWithTag(char *tag) { return false; }
+
+
+Transform3DComponent::Transform3DComponent(Vec3 pos, Vec3 scale, Quaternion rotation, Transform3DComponent* _parent):  _pos(pos), _scale(scale), _rotation(rotation),ECSComponent(nullptr) {
+	_pos = pos;
+	_scale = scale;
+	_rotation = rotation;
+	initTransform(_parent);
+}
+
+Transform3DComponent::~Transform3DComponent() {}
+
+void Transform3DComponent::OnDestroy() {}
+
+void Transform3DComponent::Update(float deltaTime) {}
+
+void Transform3DComponent::Render() const {}
+
+MeshComponent::MeshComponent(ECSComponent* parent_, const char* filename_) : ECSComponent(parent_) {
+    filename = filename_;
+	LoadModel(filename);
+    StoreMeshData(GL_TRIANGLES);
+
+}
+MeshComponent::~MeshComponent() {}
+
+bool MeshComponent::OnCreate() {
+ return true;
+}
+
+
+void MeshComponent::LoadModel(const char* filename) {
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    vertices.clear();
+    normals.clear();
+    uvCoords.clear();
+
+	try {
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename)) {
+			throw std::runtime_error(warn + err);
+		}
+	}
+	catch (const std::runtime_error& e) {
+		std::cerr << "Failed to load OBJ file: " << e.what() << std::endl;
+	}
+
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            Vec3 vertex{};
+            vertex.x = attrib.vertices[3 * index.vertex_index + 0];
+            vertex.y = attrib.vertices[3 * index.vertex_index + 1];
+            vertex.z = attrib.vertices[3 * index.vertex_index + 2];
+
+            Vec3 normal{};
+            normal.x = attrib.normals[3 * index.normal_index + 0];
+            normal.y = attrib.normals[3 * index.normal_index + 1];
+            normal.z = attrib.normals[3 * index.normal_index + 2];
+
+            Vec2 uvCoord{};
+            uvCoord.x = attrib.texcoords[2 * index.texcoord_index + 0];
+            uvCoord.y = -attrib.texcoords[2 * index.texcoord_index + 1];
+
+            vertices.push_back(vertex);
+            normals.push_back(normal);
+            uvCoords.push_back(uvCoord);
+        }
+    }
+}
+
+void MeshComponent::StoreMeshData(GLenum drawmode_) {
+    drawmode = drawmode_;
+    /// These just make the code easier for me to read
+#define VERTEX_LENGTH 	(vertices.size() * (sizeof(Vec3)))
+#define NORMAL_LENGTH 	(normals.size() * (sizeof(Vec3)))
+#define TEXCOORD_LENGTH (uvCoords.size() * (sizeof(Vec2)))
+
+    const int verticiesLayoutLocation = 0;
+    const int normalsLayoutLocation = 1;
+    const int uvCoordsLayoutLocation = 2;
+
+    /// create and bind the VOA
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    /// Create and initialize vertex buffer object VBO
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, VERTEX_LENGTH + NORMAL_LENGTH + TEXCOORD_LENGTH, nullptr, GL_STATIC_DRAW);
+
+    /// assigns the addr of "points" to be the beginning of the array buffer "sizeof(points)" in length
+    glBufferSubData(GL_ARRAY_BUFFER, 0, VERTEX_LENGTH, &vertices[0]);
+    /// assigns the addr of "normals" to be "sizeof(points)" offset from the beginning and "sizeof(normals)" in length  
+    glBufferSubData(GL_ARRAY_BUFFER, VERTEX_LENGTH, NORMAL_LENGTH, &normals[0]);
+    /// assigns the addr of "texCoords" to be "sizeof(points) + sizeof(normals)" offset from the beginning and "sizeof(texCoords)" in length  
+    glBufferSubData(GL_ARRAY_BUFFER, VERTEX_LENGTH + NORMAL_LENGTH, TEXCOORD_LENGTH, &uvCoords[0]);
+
+    glEnableVertexAttribArray(verticiesLayoutLocation);
+    glVertexAttribPointer(verticiesLayoutLocation, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(0));
+    glEnableVertexAttribArray(normalsLayoutLocation);
+    glVertexAttribPointer(normalsLayoutLocation, 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(VERTEX_LENGTH));
+    glEnableVertexAttribArray(uvCoordsLayoutLocation);
+    glVertexAttribPointer(uvCoordsLayoutLocation, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(VERTEX_LENGTH + NORMAL_LENGTH));
+
+
+    dataLength = vertices.size();
+
+    /// give back the memory used in these vectors. The data is safely stored in the GPU now
+    vertices.clear();
+    normals.clear();
+    uvCoords.clear();
+
+    /// Don't need these defines sticking around anymore
+#undef VERTEX_LENGTH
+#undef NORMAL_LENGTH
+#undef TEXCOORD_LENGTH
+
+}
+
+void MeshComponent::Render() const {
+    glBindVertexArray(vao);
+    glDrawArrays(drawmode, 0, dataLength);
+    glBindVertexArray(0); // Unbind the VAO
+}
+
+void MeshComponent::Render(GLenum drawmode_) const {
+    glBindVertexArray(vao);
+    glDrawArrays(drawmode_, 0, dataLength);
+    glBindVertexArray(0); // Unbind the VAO
+}
+
+void MeshComponent::OnDestroy() {
+    glDeleteBuffers(1, &vbo);
+    glDeleteVertexArrays(1, &vao);
+}
+
+/// Currently unused.
+
+void MeshComponent::Update(const float deltaTime) {}
+
+
+void MeshComponent::setMappedColors(Vec3 colors) {
+	mappedColors = colors;
+	
+}
+
+
+TextureComponent::TextureComponent():textureID(0), ECSComponent(nullptr) {}
+void TextureComponent::OnDestroy() {}
+void TextureComponent::Update(float deltaTime) {}
+void TextureComponent::Render() const {}
+
+bool TextureComponent::LoadTexture(const char* filename) {
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	SDL_Surface *textureSurface = IMG_Load(filename);
+	if (textureSurface == nullptr) {
+		return false;
+	}
+	image_height = textureSurface->h; image_width = textureSurface->w;
+	int mode = (textureSurface->format->BytesPerPixel == 4) ? GL_RGBA : GL_RGB;
+	glTexImage2D(GL_TEXTURE_2D, 0, mode, textureSurface->w, textureSurface->h, 0, mode, GL_UNSIGNED_BYTE, textureSurface->pixels);
+	
+	SDL_FreeSurface(textureSurface);
+	/// Wrapping and filtering options
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0); /// Unbind the texture
+	return true;
+}
+
+
+TextureComponent::~TextureComponent(){
+	glDeleteTextures(1, &textureID);
+}
+
 
 ShaderComponent::ShaderComponent(ECSComponent *parent_, const char *vertFilename_, const char *fragFilename_,
 								 const char *tessCtrlFilename_, const char *tessEvalFilename_,

@@ -24,15 +24,20 @@ extern Scene *scenes[] = {
 };
 extern int scenenum = std::max(0, scenenum - 1);
 
-SceneManager::SceneManager() : window{nullptr}, timer{nullptr},
-                               fps(120), isRunning{false}, fullScreen{false}
+SceneManager::SceneManager()
+    : window{nullptr},
+      timer{nullptr},
+      fps(120),
+      isRunning{false},
+      fullScreen{false}
 {
 }
 
 SceneManager::~SceneManager()
 {
 
-    if (currentScene != nullptr) {
+    if (currentScene != nullptr)
+    {
         currentScene->OnDestroy();
         delete currentScene;
         currentScene = nullptr;
@@ -79,10 +84,12 @@ bool SceneManager::Initialize(std::string name_, int width_, int height_)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO(); //(void)io;
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsStarStruck();
     ImGui_ImplSDL2_InitForOpenGL(window->getWindow(), window->getContext());
     ImGui_ImplOpenGL3_Init("#version 450");
     io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f);
+
+
     return true;
 }
 

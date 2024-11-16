@@ -6,6 +6,7 @@
 #include <iostream>
 #include "SceneTemplate.h"
 
+
 #define GENERATE_SCENE_CLASS(sceneName) \
 class sceneName : public SceneTemplate { \
 public: \

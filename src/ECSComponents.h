@@ -11,16 +11,77 @@
 
 #include <cute_c2.h>
 #include <cmath>
+#include <Matrix.h>
+#include <MMath.h>
+#include <QMath.h>
 #include <VMath.h>
 #include "SimpleShape.h"
 #include <vector>
 #include <map>
 #include <simpleini.h>
 
+#include <SDL_mixer.h>
+
 #include "Shader.h"
 #include "Camera.h"
 
 using namespace MATH;
+
+class Mesh;
+class Texture;
+
+class AudioComponent : public ECSComponent
+{
+
+public:
+	AudioComponent();
+	~AudioComponent();
+	bool OnCreate() {return true;};
+	void OnDestroy();
+	void Update(float deltaTime);
+	void Render() const;
+
+	void Play();
+	void Stop();
+	void Pause();
+	void Resume();
+	void SetVolume(float vol);
+	float GetVolume(){ return volume; };
+	void SetLoop(bool loop) { isLoop = loop;};
+	void setAudio(const char *_filename, bool _isMusic = true);
+
+private:	
+
+	struct Audio
+	{
+		enum class Type
+		{
+			Music,
+			Sound
+		};
+
+		Type type;
+		union
+		{
+			Mix_Music *music;
+			Mix_Chunk *sound;
+		};
+
+		Audio() : type(Type::Music) {}
+	};
+
+
+	Audio audio;
+
+	float volume = 100.0f;
+	bool isMusic = true;
+	bool isPlaying = false;
+	bool isPaused = false;
+	bool isLoop = false;
+	const char *filename;
+
+
+};
 
 class SpriteComponent : public ECSComponent
 {
@@ -52,7 +113,8 @@ private:
 
 	Camera cam;
 
-	Shader *shader;
+	Shader *animatedShader;
+	Shader *spriteShader;
 
 	struct Animation {
 		int StartFrame;
@@ -71,10 +133,11 @@ public:
 	void Update(float deltaTime);
 	void Render() const;
 	void SetupQuad();
-	void SetAnimation(std::string _name, int _startFrame, int _endFrame, int _speed){
+
+	void SetAnimation(const char * _name, int _startFrame, int _endFrame, int _speed){
 		Animations[_name] = Animation{ _startFrame, _endFrame, _speed };
 	}
-	void PlayAnimation(std::string _name){
+	void PlayAnimation(const char * _name){
 
 		AnimationList.push_back(Animations[_name]);
 	};
@@ -89,6 +152,7 @@ public:
 	float X() { return pos.x; };
 	float Y() { return pos.y; };
 	float Z() { return pos.z; };
+	const char * GetSpritePath(){ return filename; };
 };
 
 class ColliderComponent : public ECSComponent
@@ -152,54 +216,108 @@ public:
 	void AddAABBCollider(float x, float y, float width, float height);
 	void AddCapsuleCollider(float x, float y, float width, float height);
 	void AddPolygonCollider(float x, float y, float width, float height);
-	Collider::Type getColliderType() { return collider.type; };
+	//Collider::Type getColliderType() { return collider.type; };
+	int getColliderType() const { return static_cast<int>(collider.type);}
 	bool isColliding(ColliderComponent *other);
 	bool isCollidingWithTag(char tag);
 };
 
-/*
+class MeshComponent : public ECSComponent
+{
 
-using dynamic collisions as follows
-void setCircle(float x, float y, float radius) {
-		collider.type = Collider::Type::Circle;
-		collider.circle.p = c2V(x, y);
-		collider.circle.r = radius;
+	MeshComponent(const MeshComponent &) = delete;
+	MeshComponent(MeshComponent &&) = delete;
+	MeshComponent &operator=(const MeshComponent &) = delete;
+	MeshComponent &operator=(MeshComponent &&) = delete;
+
+private:
+	const char *filename;
+	std::vector<Vec3> vertices;
+	std::vector<Vec3> normals;
+	std::vector<Vec2> uvCoords;
+	size_t dataLength;
+	GLenum drawmode;
+
+	Vec3 mappedColors = Vec3(0.0f, 0.0f, 0.0f);
+
+	/// Private helper methods
+	void LoadModel(const char *filename);
+	void StoreMeshData(GLenum drawmode_);
+	GLuint vao, vbo;
+
+public:
+	MeshComponent(ECSComponent *parent_, const char *filename_);
+	~MeshComponent();
+	bool OnCreate();
+	void OnDestroy();
+	void Update(const float deltaTime);
+	void Render() const;
+	void Render(GLenum drawmode) const;
+	void setMappedColors(Vec3 colors);
+};
+
+class TextureComponent : public ECSComponent
+{
+
+public:
+	TextureComponent();
+	~TextureComponent();
+
+	bool LoadTexture(const char *filename);
+	inline GLuint getTextureID() const { return textureID; }
+	inline int getImageWidth() const { return image_width; }
+	inline int getImageHeight() const { return image_height; }
+
+	bool OnCreate() override { return true; }
+	void OnDestroy();
+	void Update(const float deltaTime);
+	void Render() const;
+
+private:
+	GLuint textureID;
+	int image_width, image_height;
+};
+
+class Transform3DComponent : public ECSComponent
+{
+
+private:
+	Vec3 _pos;
+	Vec3 _scale;
+	Quaternion _rotation;
+	Matrix4 _transform;
+
+public:
+	Transform3DComponent(Vec3 pos = Vec3(0.0f, 0.0f, 0.0f),
+						  Vec3 scale = Vec3(1.0f, 1.0f, 1.0f),
+						  Quaternion rotation = Quaternion(1.0f, Vec3(0.0f, 0.0f, 0.0f)), Transform3DComponent *_parent = nullptr);
+
+	bool OnCreate() override
+	{
+		return true;
 	}
+	// add a update function
+	~Transform3DComponent();
+	Vec3 pos() { return _pos; }
+	Vec3 scale() { return _scale; }
+	Quaternion rotation() { return _rotation; }
+	Matrix4 transform() { return _transform; }
+	void initTransform(Transform3DComponent *_parent = nullptr)
+	{
+		if (_parent != nullptr)
+		{
+			_transform = _parent->transform() * MMath::rotate(_rotation.w, _rotation.ijk) * MMath::translate(_pos) * MMath::scale(_scale);
+		}
+		_transform = MMath::rotate(_rotation.w, _rotation.ijk) * MMath::translate(_pos) * MMath::scale(_scale);
+	}
+	void setPos(Vec3 pos) { _pos = pos; }
+	void setScale(Vec3 scale) { _scale = scale; }
+	void setRotation(Quaternion rotation) { _rotation = rotation; }
 
-
-*/
-
-//
-// class BodyComponent : public ECSComponent {
-//
-//   private:
-//   		Vec3 pos;
-//		Vec3 vel;
-//		Vec3 acc;
-//        float mass = 1.0f;
-//   public:
-//    BodyComponent();
-//    ~BodyComponent();
-//    bool OnCreate(); // reminder to implement a check OnCreate if Entity has a Texture set width and height relatively - zoe
-//	void OnDestroy();
-//	void Update(float deltaTime);
-//    void Render() const;
-//    void TestFunction();
-//
-//    Vec3 getPos() { return pos; };
-//    Vec3 getVel() { return vel; };
-//    Vec3 getAcc() { return acc; };
-//
-//    float getMass() { return mass; };
-//
-//    void setPos(Vec3 p) { pos = p; };
-//    void setVel(Vec3 v) { vel = v; };
-//    void setAcc(Vec3 a) { acc = a; };
-//    void setMass(float m) { mass = m; };
-//
-//    void ApplyForce(Vec3 force);
-//
-//};
+	void OnDestroy();
+	void Update(const float deltaTime);
+	void Render() const;
+};
 
 class ShaderComponent : public ECSComponent
 {
@@ -244,5 +362,51 @@ public:
 
 	virtual void Render() const;
 };
+
+
+
+/*
+
+using dynamic collisions as follows
+void setCircle(float x, float y, float radius) {
+		collider.type = Collider::Type::Circle;
+		collider.circle.p = c2V(x, y);
+		collider.circle.r = radius;
+	}
+
+
+*/
+
+//
+// class BodyComponent : public ECSComponent {
+//
+//   private:
+//   		Vec3 pos;
+//		Vec3 vel;
+//		Vec3 acc;
+//        float mass = 1.0f;
+//   public:
+//    BodyComponent();
+//    ~BodyComponent();
+//    bool OnCreate(); // reminder to implement a check OnCreate if Entity has a Texture set width and height relatively - zoe
+//	void OnDestroy();
+//	void Update(float deltaTime);
+//    void Render() const;
+//    void TestFunction();
+//
+//    Vec3 getPos() { return pos; };
+//    Vec3 getVel() { return vel; };
+//    Vec3 getAcc() { return acc; };
+//
+//    float getMass() { return mass; };
+//
+//    void setPos(Vec3 p) { pos = p; };
+//    void setVel(Vec3 v) { vel = v; };
+//    void setAcc(Vec3 a) { acc = a; };
+//    void setMass(float m) { mass = m; };
+//
+//    void ApplyForce(Vec3 force);
+//
+//};
 
 #endif

@@ -8,6 +8,8 @@ class Scene;
 extern Scene *currentScene;
 extern Scene *scenes[];
 
+
+
 class Window;
 
 class SceneManager
@@ -15,6 +17,7 @@ class SceneManager
 public:
     SceneManager();
     ~SceneManager();
+
 
     void Run();
     bool Initialize(std::string name_, int width_, int height_);
@@ -38,6 +41,7 @@ private:
     unsigned int fps;
     bool isRunning;
     bool fullScreen;
+
 };
 
 #endif // SCENEMANAGER_H

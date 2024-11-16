@@ -12,8 +12,6 @@
 #include <cmath>
 #include <VMath.h>
 
-#include <SDL_mixer.h>
-
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_sdl.h"
@@ -31,12 +29,19 @@ using refPtr = std::shared_ptr<T>;
 static unordered_map<refPtr<Entity>, int> entityMap;
 
 static Manager manager;
-static Entity &TestEntity(manager.addEntity("TestEntity"));
-static Entity &TestCollider(manager.addEntity("TestCollider"));
-static Entity &Capsule(manager.addEntity("Capsule"));
-static Entity &Square(manager.addEntity("Square"));
-static Entity &Shader(manager.addEntity("Shader"));
-static Entity &background(manager.addEntity("background"));
+// static Entity &TestEntity(manager.addEntity("TestEntity"));
+// static Entity &TestCollider(manager.addEntity("TestCollider"));
+// static Entity &Capsule(manager.addEntity("Capsule"));
+// static Entity &Square(manager.addEntity("Square"));
+// static Entity &background(manager.addEntity("background"));
+
+// static Entity &LuaEntity(manager.addEntity("LuaEntity"));
+
+static Entity &Skull(manager.addEntity("skull"));
+static Entity &shader(manager.addEntity("shader"));
+
+
+Matrix4 skullMatrix;
 
 union SDL_Event;
 
@@ -51,17 +56,14 @@ int KeyboardY = 0;
 
 bool isDebugging = true;
 
-Mix_Music *backgroundMusic = nullptr;
-Mix_Chunk *soundEffect = nullptr;
-
-
-
 BaseScene::BaseScene() : drawInWireMode(false), IsPaused(false) {}
 
 BaseScene::~BaseScene() {}
 
 bool BaseScene::OnCreate()
 {
+
+    bridge.SetupBridge();
 
     if (SDL_NumJoysticks() < 1)
     {
@@ -79,62 +81,55 @@ bool BaseScene::OnCreate()
         else
         {
             printf("Controller detected and opened!\n");
+            bridge.bind_controller(controller);
         }
     }
 
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-    {
-        std::cout << "SDL_mixer could not initialize! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return -1;
-    }
+    Skull.addComponent<MeshComponent>(nullptr, "./src/meshes/Skull.obj");
+    Skull.addComponent<Transform3DComponent>(Vec3(600.0f, 200.0f, 0.f), Vec3(50.f, 50.f, 50.f), Quaternion(1.0f, Vec3(0.0f, 1.0f, 0.0f)));
+    Skull.addComponent<TextureComponent>().LoadTexture("./src/textures/skull_texture.jpg");
 
-    // Load music and sound effect
-    backgroundMusic = Mix_LoadMUS("./src/audio/Mysterious Ambience.mp3");
-    if (backgroundMusic == nullptr)
-    {
-        std::cout << "Failed to load background music! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return -1;
-    }
-
-    soundEffect = Mix_LoadWAV("./src/audio/mixkit-retro-game-notification-212.wav");
-    if (soundEffect == nullptr)
-    {
-        std::cout << "Failed to load sound effect! SDL_mixer Error: " << Mix_GetError() << std::endl;
-        return -1;
-    }
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 2); 
-    Mix_PlayMusic(backgroundMusic, -1);
-    
-
-    Shader.addComponent<ShaderComponent>(nullptr, "./src/shaders/DefaultTextureShader.vert", "./src/shaders/DefaultTextureShade.frag");
-    if (Shader.getComponent<ShaderComponent>().OnCreate() == false)
+    shader.addComponent<ShaderComponent>(nullptr, "./src/shaders/textureVert.glsl", "./src/shaders/textureFrag.glsl");
+    if (shader.getComponent<ShaderComponent>().OnCreate() == false)
     {
         cout << "Shader failed ... we have a problem\n";
     }
 
 
-    if (!TestEntity.addComponent<SpriteComponent>().LoadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40.0f, 100.0f, 1.0f), true, 32, 8, 100))
-    {
-        cout << "Sprite failed ... we have a problem\n";
-        return false;
-    }
+    //  Skull.addComponent<MeshComponent>("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg", LIT); // we should have three options for shaders LIT, UNLIT and custom
+    // if texture not defined or failed then use blank_texture.jpg
+    // in theory we should only need a mesh and transform component 
+    // also we should make it to that we can use a vec3 with angles instead of a quaternion
+    // Skull.addComponent<Transform3DComponent>(Vec3(600.0f, 200.0f, 0.f), Vec3(50.f, 50.f, 50.f), Vec3(0.0f, 90.0f, 0.0f));
 
 
-    if (!background.addComponent<SpriteComponent>().LoadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350.0f, 200.0f, 0.0f)))
-    {
-        cout << "Sprite failed ... we have a problem\n";
-        return false;
-    }
 
-    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkBack", 0, 7, 100);
-    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkLeft", 8, 15, 100);
-    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkRight", 16, 23, 100);
-    TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkFront", 24, 31, 100);
 
-    TestEntity.addComponent<ColliderComponent>().AddCircleCollider(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 60);
-    Capsule.addComponent<ColliderComponent>().AddCapsuleCollider(TestEntity.getComponent<SpriteComponent>().X() + 300, TestEntity.getComponent<SpriteComponent>().Y(), 100, 200);
-    Square.addComponent<ColliderComponent>().AddAABBCollider(700, 300, 100, 100);
-    TestCollider.addComponent<ColliderComponent>().AddCircleCollider(500, 300, 100);
+   
+
+
+    // if (!TestEntity.addComponent<SpriteComponent>().LoadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40.0f, 100.0f, 1.0f), true, 32, 8, 100))
+    // {
+    //     cout << "Sprite failed ... we have a problem\n";
+    //     return false;
+    // }
+
+    // if (!background.addComponent<SpriteComponent>().LoadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350.0f, 200.0f, 0.0f)))
+    // {
+    //     cout << "Sprite failed ... we have a problem\n";
+    //     return false;
+    // }
+
+    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkBack", 0, 7, 100);
+    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkLeft", 8, 15, 100);
+    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkRight", 16, 23, 100);
+    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkFront", 24, 31, 100);
+
+    // TestEntity.addComponent<ColliderComponent>().AddCircleCollider(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 60);
+    // Capsule.addComponent<ColliderComponent>().AddCapsuleCollider(TestEntity.getComponent<SpriteComponent>().X() + 300, TestEntity.getComponent<SpriteComponent>().Y(), 100, 200);
+    // Square.addComponent<ColliderComponent>().AddAABBCollider(700, 300, 100, 100);
+    // TestCollider.addComponent<ColliderComponent>().AddCircleCollider(500, 300, 100);
+    //  TestEntity.addComponent<ColliderComponent>().
 
     return true;
 }
@@ -148,28 +143,29 @@ void BaseScene::OnDestroy()
         controller = nullptr;
     }
 
-    Shader.getComponent<ShaderComponent>().OnDestroy();
-    Shader.OnDestroy();
-    TestEntity.getComponent<SpriteComponent>().OnDestroy();
-    TestEntity.OnDestroy();
-    TestCollider.getComponent<ColliderComponent>().OnDestroy();
-    TestCollider.OnDestroy();
-    Capsule.getComponent<ColliderComponent>().OnDestroy();
-    Capsule.OnDestroy();
-    Square.getComponent<ColliderComponent>().OnDestroy();
-    Square.OnDestroy();
+    // TestEntity.getComponent<SpriteComponent>().OnDestroy();
+    // TestEntity.OnDestroy();
+    // TestCollider.getComponent<ColliderComponent>().OnDestroy();
+    // TestCollider.OnDestroy();
+    // Capsule.getComponent<ColliderComponent>().OnDestroy();
+    // Capsule.OnDestroy();
+    // Square.getComponent<ColliderComponent>().OnDestroy();
+    // Square.OnDestroy();
 
-    manager.clearEntities();
+    // manager.clearEntities();
 
-    Mix_FreeMusic(backgroundMusic);
-    Mix_FreeChunk(soundEffect);
-    Mix_CloseAudio();
+    // Mix_CloseAudio();
 
     //	Shader.removeComponent<ShaderComponent>();
+
+    Skull.getComponent<MeshComponent>().OnDestroy();
+    Skull.OnDestroy();
+    delete &Skull;
 }
 
 void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
 {
+    bridge.process_sdl_event(sdlEvent);
     switch (sdlEvent.type)
     {
     case SDL_KEYDOWN:
@@ -192,139 +188,140 @@ void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
     default:
         break;
     }
-
-    switch (NUMOFJOYSTICKS)
-    {
-    case 0:
-
-        switch (sdlEvent.type)
-        {
-        case SDL_KEYDOWN:
-            switch (sdlEvent.key.keysym.scancode)
-            {
-            case SDL_SCANCODE_W:
-                KeyboardY = 1;
-                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");
-                break;
-            case SDL_SCANCODE_S:
-                KeyboardY = -1;
-                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");
-                break;
-            case SDL_SCANCODE_A:
-                KeyboardX = -1;
-                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");
-                break;
-            case SDL_SCANCODE_D:
-                KeyboardX = 1;
-                TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");
-                break;
-            default:
-                break;
-            }
-            break;
-        case SDL_KEYUP: // Handle when keys are released
-            switch (sdlEvent.key.keysym.scancode)
-            {
-            case SDL_SCANCODE_W:
-            case SDL_SCANCODE_S:
-                KeyboardY = 0;
-                if(KeyboardX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                break;
-            case SDL_SCANCODE_A:
-            case SDL_SCANCODE_D:
-                KeyboardX = 0;
-                if (KeyboardY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                break;
-            default:
-                break;
-            }
-            break;
-
-        default:
-            break;
-        }
-
-        break;
-
-    case 1:
-
-        switch (sdlEvent.type)
-        {
-        case SDL_CONTROLLERBUTTONDOWN:
-        case SDL_CONTROLLERBUTTONUP:
-            //  printf("Controller button event detected!\n");
-            // printf("Button: %d, State: %s\n",
-            //      sdlEvent.cbutton.button,
-            //       sdlEvent.type == SDL_CONTROLLERBUTTONDOWN ? "Pressed" : "Released");
-            SDL_GameControllerRumble(controller, 65535, 65535, 500);
-            Mix_PlayChannel(-1, soundEffect, 0);
-            break;
-        case SDL_CONTROLLERAXISMOTION:
-            // printf("Controller axis motion detected!\n");
-            //  printf("Axis: %d, Value: %d\n", sdlEvent.caxis.axis, sdlEvent.caxis.value);
-
-            switch (sdlEvent.caxis.axis)
-            {
-            case SDL_CONTROLLER_AXIS_LEFTX:
-                if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
-                {
-                    leftStickX = sdlEvent.caxis.value;
-                    if(leftStickX > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");}
-                    if(leftStickX < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");}
-                }
-                else
-                {
-                    leftStickX = 0;
-                    if(leftStickY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                }
-                break;
-            case SDL_CONTROLLER_AXIS_LEFTY:
-                if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
-                {
-                    leftStickY = sdlEvent.caxis.value;
-                    if(leftStickY < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");}
-                    if(leftStickY > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");}
-                }
-                else
-                {
-                    leftStickY = 0;
-                    if (leftStickX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
-                }
-                break;
-            }
-        }
-
-        break;
-
-    default:
-        if (NUMOFJOYSTICKS > 1)
-        {
-            printf("Sorry we don't support multiple joysticks yet\n");
-        }
-        break;
-    }
-
-
-
+    //
+    // switch (NUMOFJOYSTICKS)
+    // {
+    // case 0:
+    //
+    //     switch (sdlEvent.type)
+    //     {
+    //     case SDL_KEYDOWN:
+    //         switch (sdlEvent.key.keysym.scancode)
+    //         {
+    //         case SDL_SCANCODE_W:
+    //             KeyboardY = 1;
+    //             TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");
+    //             break;
+    //         case SDL_SCANCODE_S:
+    //             KeyboardY = -1;
+    //             TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");
+    //             break;
+    //         case SDL_SCANCODE_A:
+    //             KeyboardX = -1;
+    //             TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");
+    //             break;
+    //         case SDL_SCANCODE_D:
+    //             KeyboardX = 1;
+    //             TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");
+    //             break;
+    //         default:
+    //             break;
+    //         }
+    //         break;
+    //     case SDL_KEYUP: // Handle when keys are released
+    //         switch (sdlEvent.key.keysym.scancode)
+    //         {
+    //         case SDL_SCANCODE_W:
+    //         case SDL_SCANCODE_S:
+    //             KeyboardY = 0;
+    //             if(KeyboardX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             break;
+    //         case SDL_SCANCODE_A:
+    //         case SDL_SCANCODE_D:
+    //             KeyboardX = 0;
+    //             if (KeyboardY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             break;
+    //         default:
+    //             break;
+    //         }
+    //         break;
+    //
+    //     default:
+    //         break;
+    //     }
+    //
+    //     break;
+    //
+    // case 1:
+    //
+    //     switch (sdlEvent.type)
+    //     {
+    //     case SDL_CONTROLLERBUTTONDOWN:
+    //     case SDL_CONTROLLERBUTTONUP:
+    //         //  printf("Controller button event detected!\n");
+    //         // printf("Button: %d, State: %s\n",
+    //         //      sdlEvent.cbutton.button,
+    //         //       sdlEvent.type == SDL_CONTROLLERBUTTONDOWN ? "Pressed" : "Released");
+    //
+    //         //    Low frequency rumble  High frequency rumble   Duration
+    //         //SDL_GameControllerRumble(controller, 65535, 65535, 500);
+    //
+    //         SDL_GameControllerRumble(controller, 30000, 0, 100);
+    //
+    //         break;
+    //     case SDL_CONTROLLERAXISMOTION:
+    //         // printf("Controller axis motion detected!\n");
+    //         //  printf("Axis: %d, Value: %d\n", sdlEvent.caxis.axis, sdlEvent.caxis.value);
+    //
+    //         switch (sdlEvent.caxis.axis)
+    //         {
+    //         case SDL_CONTROLLER_AXIS_LEFTX:
+    //             if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
+    //             {
+    //                 leftStickX = sdlEvent.caxis.value;
+    //                 if(leftStickX > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkRight");}
+    //                 if(leftStickX < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkLeft");}
+    //             }
+    //             else
+    //             {
+    //                 leftStickX = 0;
+    //                 if(leftStickY == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             }
+    //             break;
+    //         case SDL_CONTROLLER_AXIS_LEFTY:
+    //             if (abs(sdlEvent.caxis.value) > JOYSTICK_DEAD_ZONE)
+    //             {
+    //                 leftStickY = sdlEvent.caxis.value;
+    //                 if(leftStickY < 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkFront");}
+    //                 if(leftStickY > 0) {TestEntity.getComponent<SpriteComponent>().ClearAnimation(); TestEntity.getComponent<SpriteComponent>().PlayAnimation("WalkBack");}
+    //             }
+    //             else
+    //             {
+    //                 leftStickY = 0;
+    //                 if (leftStickX == 0) TestEntity.getComponent<SpriteComponent>().ClearAnimation();
+    //             }
+    //             break;
+    //         }
+    //     }
+    //
+    //     break;
+    //
+    // default:
+    //     if (NUMOFJOYSTICKS > 1)
+    //     {
+    //         printf("Sorry we don't support multiple joysticks yet\n");
+    //     }
+    //     break;
+    // }
 }
 
-void KeyboardMovement()
-{
-    TestEntity.getComponent<SpriteComponent>().setPosX(TestEntity.getComponent<SpriteComponent>().X() + (KeyboardX * 2.5f));
-    TestEntity.getComponent<SpriteComponent>().setPosY(TestEntity.getComponent<SpriteComponent>().Y() + (KeyboardY * 2.5f));
-}
-void JoystickMovement()
-{
-
-    TestEntity.getComponent<SpriteComponent>().setPosX(
-        TestEntity.getComponent<SpriteComponent>().X() + (leftStickX * 0.0001f));
-    TestEntity.getComponent<SpriteComponent>().setPosY(
-        (TestEntity.getComponent<SpriteComponent>().Y() + (-leftStickY * 0.0001f)));
-}
+// void KeyboardMovement()
+//{
+//     TestEntity.getComponent<SpriteComponent>().setPosX(TestEntity.getComponent<SpriteComponent>().X() + (KeyboardX * 2.5f));
+//     TestEntity.getComponent<SpriteComponent>().setPosY(TestEntity.getComponent<SpriteComponent>().Y() + (KeyboardY * 2.5f));
+// }
+// void JoystickMovement()
+//{
+//
+//     TestEntity.getComponent<SpriteComponent>().setPosX(
+//         TestEntity.getComponent<SpriteComponent>().X() + (leftStickX * 0.0001f));
+//     TestEntity.getComponent<SpriteComponent>().setPosY(
+//         (TestEntity.getComponent<SpriteComponent>().Y() + (-leftStickY * 0.0001f)));
+// }
 
 void BaseScene::Update(const float deltaTime)
 {
@@ -335,30 +332,37 @@ void BaseScene::Update(const float deltaTime)
         return;
 
     // std::cout << "FPS: " << 1.0f / deltaTime << std::endl;
-    dt = deltaTime;
 
-    TestEntity.getComponent<SpriteComponent>().Update(deltaTime);
-    background.getComponent<SpriteComponent>().Update(deltaTime);
+    // TestEntity.getComponent<SpriteComponent>().Update(deltaTime);
+    // background.getComponent<SpriteComponent>().Update(deltaTime);
+    bridge.Update(deltaTime);
     switch (NUMOFJOYSTICKS)
     {
     case 0:
-        KeyboardMovement();
+        // KeyboardMovement();
         break;
     case 1:
-        JoystickMovement();
+        // JoystickMovement();
         break;
     default:
         if (NUMOFJOYSTICKS > 1)
         {
-            JoystickMovement();
+            // JoystickMovement();
         }
         break;
     }
 
-    TestCollider.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    Capsule.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    Square.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    TestEntity.getComponent<ColliderComponent>().setPos(Vec3(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 0.0f));
+    static float angle = 0.0f;
+	angle += 30.0f * deltaTime; 
+	skullMatrix =  Skull.getComponent<Transform3DComponent>().transform() * MMath::rotate(angle, Vec3(0.0f, 1.0f, 0.0f)) ;
+
+
+    // TestCollider.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
+    // Capsule.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
+    // Square.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
+    // TestEntity.getComponent<ColliderComponent>().setPos(Vec3(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 0.0f));
+
+    // std::cout << TestEntity.getComponent<SpriteComponent>().GetSpritePath() << std::endl;
 }
 
 void BaseScene::DubugGUI()
@@ -392,8 +396,8 @@ void BaseScene::DubugGUI()
     ImGui::Begin("Input", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
     ImGui::SetWindowSize(ImVec2(200, 150));
     ImGui::SetWindowPos("Input", ImVec2(200, 0));
-    ImGui::Text("X: %f", TestEntity.getComponent<SpriteComponent>().X());
-    ImGui::Text("Y: %f", TestEntity.getComponent<SpriteComponent>().Y());
+    // ImGui::Text("X: %f", TestEntity.getComponent<SpriteComponent>().X());
+    // ImGui::Text("Y: %f", TestEntity.getComponent<SpriteComponent>().Y());
 
     if (ImGui::Button("Controller", ImVec2(100, 0)))
     {
@@ -437,37 +441,38 @@ void BaseScene::Render() const
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+
+
+
+
+    // background.getComponent<SpriteComponent>().Render();
+    // TestEntity.getComponent<SpriteComponent>().Render();
+    bridge.Render();
+
     if (isDebugging)
     {
-
-        TestEntity.getComponent<ColliderComponent>().Render();
-        Capsule.getComponent<ColliderComponent>().Render();
-        TestCollider.getComponent<ColliderComponent>().Render();
-        Square.getComponent<ColliderComponent>().Render();
+        // TestEntity.getComponent<ColliderComponent>().Render();
+        // Capsule.getComponent<ColliderComponent>().Render();
+        // TestCollider.getComponent<ColliderComponent>().Render();
+        // Square.getComponent<ColliderComponent>().Render();
     }
 
-    if (drawInWireMode)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-    else
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
+    drawInWireMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    glUseProgram(Shader.getComponent<ShaderComponent>().GetProgram());
+    glEnable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE0);
+    glEnable(GL_TEXTURE_2D);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glUseProgram(shader.getComponent<ShaderComponent>().GetProgram());
+    glBindTexture(GL_TEXTURE_2D, Skull.getComponent<TextureComponent>().getTextureID());
+    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("projectionMatrix"), 1, GL_FALSE, cam.GetProjectionMatrix());
+    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("viewMatrix"), 1, GL_FALSE, cam.GetViewMatrix());
+    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("modelMatrix"), 1, GL_FALSE, skullMatrix);
+    Skull.getComponent<MeshComponent>().Render(GL_TRIANGLES);
 
-    glUniformMatrix4fv(Shader.getComponent<ShaderComponent>().GetUniformID("projection"), 1, GL_FALSE, cam.GetProjectionMatrix());
-    glUniformMatrix4fv(Shader.getComponent<ShaderComponent>().GetUniformID("view"), 1, GL_FALSE, cam.GetVeiwMatrix());
-
-    glUniformMatrix4fv(Shader.getComponent<ShaderComponent>().GetUniformID("model"), 1, GL_FALSE, background.getComponent<SpriteComponent>().GetModelMatrix());
-    background.getComponent<SpriteComponent>().Render();
-    glUniformMatrix4fv(Shader.getComponent<ShaderComponent>().GetUniformID("model"), 1, GL_FALSE, TestEntity.getComponent<SpriteComponent>().GetModelMatrix());
-
-    TestEntity.getComponent<SpriteComponent>().Render();
+    glDisable(GL_TEXTURE_2D);
 
     glUseProgram(0);
 }

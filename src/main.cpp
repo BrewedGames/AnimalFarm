@@ -6,7 +6,7 @@
 #include <iostream>
 #include <SimpleIni.h>
 #include "SceneManager.h"
-#include "Bridge.h"
+
 
 
 
@@ -28,8 +28,6 @@ int main(int argc, char *args[])
     SCREEN_WIDTH = std::stoi(ini.GetValue("Display", "width"));
     SCREEN_HEIGHT = std::stoi(ini.GetValue("Display", "height"));
 
-    Bridge bridge;
-    bridge.SetupBridge();
 
     SceneManager *gsm = new SceneManager();
     if (gsm->Initialize(ini.GetValue("Project", "name"), SCREEN_WIDTH, SCREEN_HEIGHT) == true)

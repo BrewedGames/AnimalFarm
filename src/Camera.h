@@ -26,7 +26,7 @@ public:
 
 	void SetZoom(float _zoom);
 	void setView(Quaternion _q, Vec3 _vec);
-	Matrix4 GetVeiwMatrix() const;
+	Matrix4 GetViewMatrix() const;
 	Matrix4 GetProjectionMatrix() const;
 
 
