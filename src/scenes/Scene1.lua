@@ -1,6 +1,7 @@
 local background = manager:addEntity("Background")
 local squirrel = manager:addEntity("Squirrel")
 local player = manager:addEntity("Player")
+local skull = manager:addEntity("Skull")
 
 
 local squirrelSprite = squirrel:addSpriteComponent()
@@ -10,6 +11,15 @@ local playerCollider = player:addColliderComponent()
 local squirrelCollider = squirrel:addColliderComponent()
 
 local backgroundImage = background:addSpriteComponent()
+
+local SkullModel = skull:addMeshComponent()
+
+local angle = 0
+
+-- if you want to load a Mesh with defualt values 
+--SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg")
+-- or you can specify the values
+SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg", Vec3(600, 200, 0), Vec3(50, 50, 50), Vec3(90, 0, 0))
 
 
 local testVec = Vec3(1, 2, 3)
@@ -22,6 +32,7 @@ backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(35
 audio:setAudio("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3", true)
 audio:setVolume(50) 
 audio:Play()
+
 
 playerCollider:setTag("Player")
 playerCollider:addCapsuleCollider(sprite:getPos().x, sprite:getPos().y, 50, 100)
@@ -66,7 +77,12 @@ function on_event(event)
 end
 
 
+
 function update(delta_time)
+
+
+    angle = angle + 30.0 * delta_time
+    SkullModel:setRotation(Vec3(angle, angle, 0))
 
     playerCollider:setPos(Vec3(sprite:getPos().x, sprite:getPos().y, sprite:getPos().z))
 

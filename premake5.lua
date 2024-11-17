@@ -38,8 +38,10 @@ project "StarStruck"
    links {"lua54"}
    cppdialect "C++17"
    
+   filter "system:windows"
+      buildoptions { "/bigobj" }
 
-   files { "**.h", "**.cpp", "**.nut" }
+   files { "**.h", "**.cpp", "**.lua" }
 
    filter "configurations:Debug"
       defines { "DEBUG" }

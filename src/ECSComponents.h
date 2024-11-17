@@ -25,10 +25,13 @@
 #include "Shader.h"
 #include "Camera.h"
 
-using namespace MATH;
+#include "Mesh.h"
+#include "Texture.h"
 
 class Mesh;
 class Texture;
+
+using namespace MATH;
 
 class AudioComponent : public ECSComponent
 {
@@ -36,7 +39,7 @@ class AudioComponent : public ECSComponent
 public:
 	AudioComponent();
 	~AudioComponent();
-	bool OnCreate() {return true;};
+	bool OnCreate() { return true; };
 	void OnDestroy();
 	void Update(float deltaTime);
 	void Render() const;
@@ -46,12 +49,11 @@ public:
 	void Pause();
 	void Resume();
 	void SetVolume(float vol);
-	float GetVolume(){ return volume; };
-	void SetLoop(bool loop) { isLoop = loop;};
+	float GetVolume() { return volume; };
+	void SetLoop(bool loop) { isLoop = loop; };
 	void setAudio(const char *_filename, bool _isMusic = true);
 
-private:	
-
+private:
 	struct Audio
 	{
 		enum class Type
@@ -70,7 +72,6 @@ private:
 		Audio() : type(Type::Music) {}
 	};
 
-
 	Audio audio;
 
 	float volume = 100.0f;
@@ -79,8 +80,6 @@ private:
 	bool isPaused = false;
 	bool isLoop = false;
 	const char *filename;
-
-
 };
 
 class SpriteComponent : public ECSComponent
@@ -116,7 +115,8 @@ private:
 	Shader *animatedShader;
 	Shader *spriteShader;
 
-	struct Animation {
+	struct Animation
+	{
 		int StartFrame;
 		int EndFrame;
 		int Speed;
@@ -134,14 +134,16 @@ public:
 	void Render() const;
 	void SetupQuad();
 
-	void SetAnimation(const char * _name, int _startFrame, int _endFrame, int _speed){
-		Animations[_name] = Animation{ _startFrame, _endFrame, _speed };
+	void SetAnimation(const char *_name, int _startFrame, int _endFrame, int _speed)
+	{
+		Animations[_name] = Animation{_startFrame, _endFrame, _speed};
 	}
-	void PlayAnimation(const char * _name){
+	void PlayAnimation(const char *_name)
+	{
 
 		AnimationList.push_back(Animations[_name]);
 	};
-	void ClearAnimation(){ AnimationList.clear(); };
+	void ClearAnimation() { AnimationList.clear(); };
 	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _totalFrames = 0, int _framesPerRow = 0, int _speed = 100, Camera _cam = Camera());
 	Matrix4 GetModelMatrix() { return modelMatrix; };
 	Vec3 getPos() { return pos; };
@@ -152,7 +154,7 @@ public:
 	float X() { return pos.x; };
 	float Y() { return pos.y; };
 	float Z() { return pos.z; };
-	const char * GetSpritePath(){ return filename; };
+	const char *GetSpritePath() { return filename; };
 };
 
 class ColliderComponent : public ECSComponent
@@ -216,8 +218,8 @@ public:
 	void AddAABBCollider(float x, float y, float width, float height);
 	void AddCapsuleCollider(float x, float y, float width, float height);
 	void AddPolygonCollider(float x, float y, float width, float height);
-	//Collider::Type getColliderType() { return collider.type; };
-	int getColliderType() const { return static_cast<int>(collider.type);}
+	// Collider::Type getColliderType() { return collider.type; };
+	int getColliderType() const { return static_cast<int>(collider.type); }
 	bool isColliding(ColliderComponent *other);
 	bool isCollidingWithTag(char tag);
 };
@@ -225,99 +227,60 @@ public:
 class MeshComponent : public ECSComponent
 {
 
-	MeshComponent(const MeshComponent &) = delete;
-	MeshComponent(MeshComponent &&) = delete;
-	MeshComponent &operator=(const MeshComponent &) = delete;
-	MeshComponent &operator=(MeshComponent &&) = delete;
-
 private:
-	const char *filename;
-	std::vector<Vec3> vertices;
-	std::vector<Vec3> normals;
-	std::vector<Vec2> uvCoords;
-	size_t dataLength;
-	GLenum drawmode;
-
-	Vec3 mappedColors = Vec3(0.0f, 0.0f, 0.0f);
-
-	/// Private helper methods
-	void LoadModel(const char *filename);
-	void StoreMeshData(GLenum drawmode_);
-	GLuint vao, vbo;
+	const char *mesh_filename;
+	const char *texture_filename;
+	Mesh *mesh;
+	Texture *texture;
+	Shader *UNLIT_shader;
+	Camera cam;
+	bool hasTexture = true;
+	Vec3 _pos;
+	Vec3 _scale;
+	Vec3 _rotation;
+	Matrix4 _transform;
+	Matrix4 combinedRotation;
 
 public:
-	MeshComponent(ECSComponent *parent_, const char *filename_);
+	MeshComponent();
 	~MeshComponent();
 	bool OnCreate();
 	void OnDestroy();
 	void Update(const float deltaTime);
 	void Render() const;
 	void Render(GLenum drawmode) const;
-	void setMappedColors(Vec3 colors);
-};
 
-class TextureComponent : public ECSComponent
-{
-
-public:
-	TextureComponent();
-	~TextureComponent();
-
-	bool LoadTexture(const char *filename);
-	inline GLuint getTextureID() const { return textureID; }
-	inline int getImageWidth() const { return image_width; }
-	inline int getImageHeight() const { return image_height; }
-
-	bool OnCreate() override { return true; }
-	void OnDestroy();
-	void Update(const float deltaTime);
-	void Render() const;
-
-private:
-	GLuint textureID;
-	int image_width, image_height;
-};
-
-class Transform3DComponent : public ECSComponent
-{
-
-private:
-	Vec3 _pos;
-	Vec3 _scale;
-	Quaternion _rotation;
-	Matrix4 _transform;
-
-public:
-	Transform3DComponent(Vec3 pos = Vec3(0.0f, 0.0f, 0.0f),
-						  Vec3 scale = Vec3(1.0f, 1.0f, 1.0f),
-						  Quaternion rotation = Quaternion(1.0f, Vec3(0.0f, 0.0f, 0.0f)), Transform3DComponent *_parent = nullptr);
-
-	bool OnCreate() override
-	{
-		return true;
-	}
-	// add a update function
-	~Transform3DComponent();
+	void loadMesh(const char *mesh_filename_, const char *texture_filename_, Vec3 pos = Vec3(0.0f, 0.0f, 0.0f),
+						  Vec3 scale = Vec3(50.0f, 50.0f, 50.0f),
+						  Vec3 rotation = Vec3(0.0f, 0.0f, 0.0f));
 	Vec3 pos() { return _pos; }
 	Vec3 scale() { return _scale; }
-	Quaternion rotation() { return _rotation; }
+	Vec3 rotation() { return _rotation; }
 	Matrix4 transform() { return _transform; }
-	void initTransform(Transform3DComponent *_parent = nullptr)
+
+	void initTransform()
 	{
-		if (_parent != nullptr)
-		{
-			_transform = _parent->transform() * MMath::rotate(_rotation.w, _rotation.ijk) * MMath::translate(_pos) * MMath::scale(_scale);
-		}
-		_transform = MMath::rotate(_rotation.w, _rotation.ijk) * MMath::translate(_pos) * MMath::scale(_scale);
+		_transform =  MMath::translate(_pos) * combinedRotation * MMath::scale(_scale);
 	}
 	void setPos(Vec3 pos) { _pos = pos; }
-	void setScale(Vec3 scale) { _scale = scale; }
-	void setRotation(Quaternion rotation) { _rotation = rotation; }
+	void setScale(Vec3 scale) { _scale = scale;  }
+	void setRotation(Vec3 rotation) {
+		 _rotation = rotation; 
+	Matrix4 rotationMatrixX = MMath::rotate(rotation.x, Vec3(0.0f, 1.0f, 0.0f));
+    Matrix4 rotationMatrixY = MMath::rotate(rotation.y, Vec3(1.0f, 0.0f, 0.0f)); 
+    Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f)); 
 
-	void OnDestroy();
-	void Update(const float deltaTime);
-	void Render() const;
+	combinedRotation = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
+	}
+	void setMappedColors(Vec3 colors) { mesh->setMappedColors(colors); };
+	inline GLuint getTextureID() const { return texture->getTextureID(); }
+	inline int getImageWidth() const { return texture->getImageWidth(); }
+	inline int getImageHeight() const { return texture->getImageHeight(); }
 };
+
+
+
+
 
 class ShaderComponent : public ECSComponent
 {
@@ -362,8 +325,6 @@ public:
 
 	virtual void Render() const;
 };
-
-
 
 /*
 

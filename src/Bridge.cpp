@@ -113,12 +113,42 @@ void Bridge::SetupBridge()
     "addColliderComponent", [](Entity& entity) -> ColliderComponent& {
         return entity.addComponent<ColliderComponent>();
     },
-    "getColliderComponent", &Entity::getComponent<ColliderComponent>
+    "getColliderComponent", &Entity::getComponent<ColliderComponent>,
+    "addMeshComponent", [](Entity& entity) -> MeshComponent& {
+    return entity.addComponent<MeshComponent>();
+    },
+    "getMeshComponent", &Entity::getComponent<MeshComponent>
+
                              //"addShaderComponent", [](Entity& entity) -> ShaderComponent& {
                              //    return entity.addComponent<ShaderComponent>();
                              //},
                              //"getShaderComponent", &Entity::getComponent<ShaderComponent>
 
+    );
+
+
+
+    lua.new_usertype<MeshComponent>("MeshComponent",
+     "loadMesh", sol::overload(
+
+        [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename, MATH::Vec3 pos, MATH::Vec3 scale, MATH::Vec3 rotation)
+        {
+            mesh.loadMesh(mesh_filename, texture_filename, pos, scale, rotation);
+        },
+
+        [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename)
+        {
+            mesh.loadMesh(mesh_filename, texture_filename);
+        }),
+        "setPos", &MeshComponent::setPos,
+        "getPos", &MeshComponent::pos,
+        "setRotation", &MeshComponent::setRotation,
+        "getRotation", &MeshComponent::rotation,
+        "setScale", &MeshComponent::setScale,
+        "getScale", &MeshComponent::scale,
+        "getTextureID", &MeshComponent::getTextureID,
+        "getImageWidth", &MeshComponent::getImageWidth,
+        "getImageHeight", &MeshComponent::getImageHeight
     );
 
     lua.new_usertype<SpriteComponent>("SpriteComponent",
@@ -155,7 +185,6 @@ void Bridge::SetupBridge()
         "Stop", &AudioComponent::Stop,
         "Pause", &AudioComponent::Pause,
         "Resume", &AudioComponent::Resume
-
     );
 
     lua["ColliderType"] = lua.create_table_with(
@@ -205,6 +234,7 @@ void Bridge::Update(float deltaTime)
     {
         entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Update(deltaTime) : 0;
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Update(deltaTime) : 0;
+        entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Update(deltaTime) : 0;
     }
 }
 
@@ -216,6 +246,7 @@ void Bridge::Render() const
         // std::cout << entity->getName() << std::endl;
         entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : 0;
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : 0;
+        entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : 0;
     }
 
 

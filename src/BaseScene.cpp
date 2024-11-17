@@ -38,10 +38,10 @@ static Manager manager;
 // static Entity &LuaEntity(manager.addEntity("LuaEntity"));
 
 static Entity &Skull(manager.addEntity("skull"));
-static Entity &shader(manager.addEntity("shader"));
 
 
-Matrix4 skullMatrix;
+
+
 
 union SDL_Event;
 
@@ -85,51 +85,7 @@ bool BaseScene::OnCreate()
         }
     }
 
-    Skull.addComponent<MeshComponent>(nullptr, "./src/meshes/Skull.obj");
-    Skull.addComponent<Transform3DComponent>(Vec3(600.0f, 200.0f, 0.f), Vec3(50.f, 50.f, 50.f), Quaternion(1.0f, Vec3(0.0f, 1.0f, 0.0f)));
-    Skull.addComponent<TextureComponent>().LoadTexture("./src/textures/skull_texture.jpg");
 
-    shader.addComponent<ShaderComponent>(nullptr, "./src/shaders/textureVert.glsl", "./src/shaders/textureFrag.glsl");
-    if (shader.getComponent<ShaderComponent>().OnCreate() == false)
-    {
-        cout << "Shader failed ... we have a problem\n";
-    }
-
-
-    //  Skull.addComponent<MeshComponent>("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg", LIT); // we should have three options for shaders LIT, UNLIT and custom
-    // if texture not defined or failed then use blank_texture.jpg
-    // in theory we should only need a mesh and transform component 
-    // also we should make it to that we can use a vec3 with angles instead of a quaternion
-    // Skull.addComponent<Transform3DComponent>(Vec3(600.0f, 200.0f, 0.f), Vec3(50.f, 50.f, 50.f), Vec3(0.0f, 90.0f, 0.0f));
-
-
-
-
-   
-
-
-    // if (!TestEntity.addComponent<SpriteComponent>().LoadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40.0f, 100.0f, 1.0f), true, 32, 8, 100))
-    // {
-    //     cout << "Sprite failed ... we have a problem\n";
-    //     return false;
-    // }
-
-    // if (!background.addComponent<SpriteComponent>().LoadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350.0f, 200.0f, 0.0f)))
-    // {
-    //     cout << "Sprite failed ... we have a problem\n";
-    //     return false;
-    // }
-
-    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkBack", 0, 7, 100);
-    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkLeft", 8, 15, 100);
-    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkRight", 16, 23, 100);
-    // TestEntity.getComponent<SpriteComponent>().SetAnimation("WalkFront", 24, 31, 100);
-
-    // TestEntity.addComponent<ColliderComponent>().AddCircleCollider(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 60);
-    // Capsule.addComponent<ColliderComponent>().AddCapsuleCollider(TestEntity.getComponent<SpriteComponent>().X() + 300, TestEntity.getComponent<SpriteComponent>().Y(), 100, 200);
-    // Square.addComponent<ColliderComponent>().AddAABBCollider(700, 300, 100, 100);
-    // TestCollider.addComponent<ColliderComponent>().AddCircleCollider(500, 300, 100);
-    //  TestEntity.addComponent<ColliderComponent>().
 
     return true;
 }
@@ -143,24 +99,6 @@ void BaseScene::OnDestroy()
         controller = nullptr;
     }
 
-    // TestEntity.getComponent<SpriteComponent>().OnDestroy();
-    // TestEntity.OnDestroy();
-    // TestCollider.getComponent<ColliderComponent>().OnDestroy();
-    // TestCollider.OnDestroy();
-    // Capsule.getComponent<ColliderComponent>().OnDestroy();
-    // Capsule.OnDestroy();
-    // Square.getComponent<ColliderComponent>().OnDestroy();
-    // Square.OnDestroy();
-
-    // manager.clearEntities();
-
-    // Mix_CloseAudio();
-
-    //	Shader.removeComponent<ShaderComponent>();
-
-    Skull.getComponent<MeshComponent>().OnDestroy();
-    Skull.OnDestroy();
-    delete &Skull;
 }
 
 void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
@@ -352,17 +290,6 @@ void BaseScene::Update(const float deltaTime)
         break;
     }
 
-    static float angle = 0.0f;
-	angle += 30.0f * deltaTime; 
-	skullMatrix =  Skull.getComponent<Transform3DComponent>().transform() * MMath::rotate(angle, Vec3(0.0f, 1.0f, 0.0f)) ;
-
-
-    // TestCollider.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    // Capsule.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    // Square.getComponent<ColliderComponent>().isColliding(&TestEntity.getComponent<ColliderComponent>());
-    // TestEntity.getComponent<ColliderComponent>().setPos(Vec3(TestEntity.getComponent<SpriteComponent>().X(), TestEntity.getComponent<SpriteComponent>().Y(), 0.0f));
-
-    // std::cout << TestEntity.getComponent<SpriteComponent>().GetSpritePath() << std::endl;
 }
 
 void BaseScene::DubugGUI()
@@ -442,12 +369,6 @@ void BaseScene::Render() const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-
-
-
-
-    // background.getComponent<SpriteComponent>().Render();
-    // TestEntity.getComponent<SpriteComponent>().Render();
     bridge.Render();
 
     if (isDebugging)
@@ -459,20 +380,6 @@ void BaseScene::Render() const
     }
 
     drawInWireMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    glEnable(GL_DEPTH_TEST);
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
-
-    glDisable(GL_CULL_FACE);
-    glUseProgram(shader.getComponent<ShaderComponent>().GetProgram());
-    glBindTexture(GL_TEXTURE_2D, Skull.getComponent<TextureComponent>().getTextureID());
-    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("projectionMatrix"), 1, GL_FALSE, cam.GetProjectionMatrix());
-    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("viewMatrix"), 1, GL_FALSE, cam.GetViewMatrix());
-    glUniformMatrix4fv(shader.getComponent<ShaderComponent>().GetUniformID("modelMatrix"), 1, GL_FALSE, skullMatrix);
-    Skull.getComponent<MeshComponent>().Render(GL_TRIANGLES);
-
-    glDisable(GL_TEXTURE_2D);
 
     glUseProgram(0);
 }
