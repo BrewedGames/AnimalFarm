@@ -3,10 +3,43 @@
 #include "ECSComponents.h"
 #include <SDL.h>
 #include <cstring>
-
+#include <set>
 
 static Manager manager;
+std::set<std::string> initial_globals;
 
+void remove_new_globals(sol::state& lua, const std::set<std::string>& initial_globals) {
+    sol::table globals = lua["_G"];
+    sol::table persistent_globals = globals["_PERSISTENT_GLOBALS"];
+
+    for (const auto& kvp : globals) {
+        sol::object key = kvp.first;
+
+        if (key.get_type() == sol::type::string) {
+            std::string global_name = key.as<std::string>();
+
+            // Skip initial globals and persistent globals
+            if (initial_globals.find(global_name) == initial_globals.end() &&
+                !persistent_globals[global_name].valid()) {
+                globals[global_name] = sol::lua_nil;
+                std::cout << "Removed: " << global_name << "\n";
+            }
+        }
+    }
+}
+
+std::set<std::string> get_global_keys(sol::state& lua) {
+    std::set<std::string> keys;
+    sol::table globals = lua["_G"];
+
+    for (const auto& kvp : globals) {
+        sol::object key = kvp.first;
+        if (key.get_type() == sol::type::string) {
+            keys.insert(key.as<std::string>());
+        }
+    }
+    return keys;
+}
 
 
 void Bridge::process_sdl_event(const SDL_Event &event)
@@ -63,13 +96,23 @@ void Bridge::SetupBridge()
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
 
-    // Bind Vec3 directly in SetupBridge
+
+    lua["_PERSISTENT_GLOBALS"] = lua.create_table();
+
+
+    lua.set_function("constGlobal", [this](const std::string& name, sol::object value) {
+        sol::table globals = lua["_G"];
+        sol::table persistent_globals = globals["_PERSISTENT_GLOBALS"];
+        persistent_globals[name] = value;
+        globals[name] = value; 
+    });
+
+
+
     lua.new_usertype<MATH::Vec3>("Vec3", sol::constructors<MATH::Vec3(), MATH::Vec3(float, float, float)>(),
 
-                                 // Member variables
+       
                                  "x", &MATH::Vec3::x, "y", &MATH::Vec3::y, "z", &MATH::Vec3::z, "r", &MATH::Vec3::x, "g", &MATH::Vec3::y, "b", &MATH::Vec3::z,
-
-                                 // Metamethods - only including those defined in Vec3
                                  sol::meta_function::to_string, [](const MATH::Vec3 &v)
                                  { return "Vec3(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ", " + std::to_string(v.z) + ")"; }, sol::meta_function::index, [](MATH::Vec3 &v, int index)
                                  { 
@@ -77,8 +120,6 @@ void Bridge::SetupBridge()
             return v[index]; }, sol::meta_function::new_index, [](MATH::Vec3 &v, int index, float value)
                                  { 
             if (index >= 0 && index <= 2) v[index] = value; },
-
-                                 // Define addition, subtraction, multiplication, and division
                                  sol::meta_function::addition, [](const MATH::Vec3 &lhs, const MATH::Vec3 &rhs)
                                  { return lhs + rhs; }, sol::meta_function::subtraction, [](const MATH::Vec3 &lhs, const MATH::Vec3 &rhs)
                                  { return lhs - rhs; }, sol::meta_function::multiplication, [](const MATH::Vec3 &vec, float scalar)
@@ -218,17 +259,19 @@ void Bridge::SetupBridge()
                 std::cout << "C++: changeScene called with name: " << name << std::endl;
 
 
-            manager.clearEntities();
-            manager.refresh();
-            if(lua["on_event"].valid()){
-                lua["on_event"] = sol::nil;
-            }
-            if(lua["update"].valid()){
-                lua["update"] = sol::nil;
-            }
-    
-            lua["manager"] = &manager;
-            lua["GameScene"] = &scn;
+                manager.clearEntities();
+                manager.refresh();
+                if(lua["on_event"].valid()){
+                    lua["on_event"] = sol::nil;
+                }
+                if(lua["update"].valid()){
+                    lua["update"] = sol::nil;
+                }
+
+                lua["manager"] = &manager;
+                lua["GameScene"] = &scn;
+
+                remove_new_globals(lua, initial_globals);
 
                 lua.script_file(("./src/scenes/" + std::string(name) + ".lua").c_str());
             }
@@ -254,6 +297,9 @@ void Bridge::SetupBridge()
     lua["GameScene"] = &current_scene;
 
 
+
+    
+    initial_globals = get_global_keys(lua);
     // Load Lua scenes
     ini.SetUnicode();
 	ini.LoadFile("config.ini");

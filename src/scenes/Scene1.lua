@@ -17,10 +17,14 @@ local SkullModel = skull:addMeshComponent()
 local angle = 0
 
 
+-- after switching scenes anything that was set in the previous scene will be deleted 
+-- this includes globals and scripts that were set in the previous scene
+-- however if you want to keep something between scenes you can use the constGlobal function
+constGlobal("a_very_important_constant", 10)
 
 
 -- if you want to load a Mesh with defualt values 
---SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg")
+-- SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg")
 -- or you can specify the values
 SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg", Vec3(600, 200, 0), Vec3(50, 50, 50), Vec3(90, 0, 0))
 

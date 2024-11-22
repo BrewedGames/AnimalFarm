@@ -1,5 +1,7 @@
 print("hello from the player script")
 
+
+
 player = manager:addEntity("Player")
 
 sprite = player:addSpriteComponent()

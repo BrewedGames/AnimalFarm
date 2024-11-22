@@ -14,10 +14,13 @@
 #include <SDL.h>
 #include <simpleini.h>
 #include <vector>
+#include <set>
 
 #include "Camera.h"
 
 using namespace MATH;
+
+extern std::set<std::string> initial_globals;
 
 class Bridge {
 public:
@@ -34,7 +37,7 @@ public:
     void bind_controller(SDL_GameController* controller);
     void process_sdl_event(const SDL_Event &event);
     static void CreateGameObject(const std::string &name);
-
+    
     void OnCreate(); 
     void Update(float deltaTime);  
     void Render() const;  
@@ -60,6 +63,8 @@ private:
 
     GameScene current_scene;
     std::vector<GameScene> scenes;
+
+
 
 
  

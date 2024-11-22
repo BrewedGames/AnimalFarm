@@ -3,7 +3,8 @@ local backgroundImage = background:addSpriteComponent()
 backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350, 200, 0))
 print("Hello From DemoScene")
 
-
+-- as you can see you can access globals set in the previous scene
+print(a_very_important_constant)
 
 function on_event(event)
 
