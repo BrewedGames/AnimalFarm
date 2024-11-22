@@ -45,6 +45,7 @@ AudioComponent::AudioComponent() : ECSComponent(nullptr)
 		return;
 	}
 }
+
 AudioComponent::~AudioComponent()
 {
 	isMusic ? Mix_FreeMusic(audio.music) : Mix_FreeChunk(audio.sound);

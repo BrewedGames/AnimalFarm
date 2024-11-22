@@ -22,7 +22,9 @@ extern Scene *scenes[] = {
     new BaseScene,
 
 };
-extern int scenenum = std::max(0, scenenum - 1);
+
+int scenenum = 0;
+
 
 SceneManager::SceneManager()
     : window{nullptr},

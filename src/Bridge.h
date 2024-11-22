@@ -12,6 +12,8 @@
 #include "SceneGenerator.h"
 #include "Vector.h"
 #include <SDL.h>
+#include <simpleini.h>
+#include <vector>
 
 #include "Camera.h"
 
@@ -23,7 +25,7 @@ public:
     ~Bridge();
 
 
-
+    void req(const char* script);
     void SetupBridge();
     void register_key_constants();
     void register_controller_constants();
@@ -46,6 +48,19 @@ private:
 
     sol::state lua;
     SDL_GameController* lua_controller = nullptr;
+    CSimpleIniA ini;
+
+    struct GameScene{
+        const char* name;
+        int scenenum;
+        
+        GameScene() : name(nullptr), scenenum(0) {}
+        GameScene(const char* name, int scenenum) : name(name), scenenum(scenenum) {}
+    };
+
+    GameScene current_scene;
+    std::vector<GameScene> scenes;
+
 
  
 };

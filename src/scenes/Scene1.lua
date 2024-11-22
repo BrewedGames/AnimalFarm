@@ -1,20 +1,23 @@
 local background = manager:addEntity("Background")
 local squirrel = manager:addEntity("Squirrel")
-local player = manager:addEntity("Player")
 local skull = manager:addEntity("Skull")
 
 
+-- load another lua script
+req("player")
+
+
 local squirrelSprite = squirrel:addSpriteComponent()
-local sprite = player:addSpriteComponent()
 local audio  = player:addAudioComponent()
-local playerCollider = player:addColliderComponent()
 local squirrelCollider = squirrel:addColliderComponent()
 
 local backgroundImage = background:addSpriteComponent()
 
 local SkullModel = skull:addMeshComponent()
-
 local angle = 0
+
+
+
 
 -- if you want to load a Mesh with defualt values 
 --SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg")
@@ -26,7 +29,6 @@ local testVec = Vec3(1, 2, 3)
 print("Created Vec3:", testVec.x, testVec.y, testVec.z)
 
 squirrelSprite:loadSprite("./static/starstruck_color.png", 100, 100, Vec3(500, 500, 0))
-sprite:loadSprite("./static/Sample_SpriteSheet.bmp", 100, 100, Vec3(40, 100, 1), true, 32, 8, 100)
 backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350, 200, 0))
 
 audio:setAudio("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3", true)
@@ -34,17 +36,9 @@ audio:setVolume(50)
 audio:Play()
 
 
-playerCollider:setTag("Player")
-playerCollider:addCapsuleCollider(sprite:getPos().x, sprite:getPos().y, 50, 100)
-
 squirrelCollider:setTag("Squirrel")
 squirrelCollider:addCircleCollider(squirrelSprite:getPos().x, squirrelSprite:getPos().y, 60)
 
-
-sprite:setAnimation("WalkBack", 0, 7, 100)
-sprite:setAnimation("WalkLeft", 8, 15, 100)
-sprite:setAnimation("WalkRight", 16, 23, 100)
-sprite:setAnimation("WalkFront", 24, 31, 100)
 
 local pos = squirrelSprite:getPos()
 print("Player sprite position:", pos.x, pos.y, pos.z)
@@ -69,6 +63,12 @@ function on_event(event)
         if key_states["a"] then
             sprite:clearAnimation()
             sprite:playAnimation("WalkLeft")
+        end
+        if key_states["space"] then
+            print(GameScene) -- Verify it prints a userdata reference, not nil or a function
+
+           GameScene:changeScene("DemoScene")
+
         end
     elseif event.type == "keyup" then
         sprite:clearAnimation()

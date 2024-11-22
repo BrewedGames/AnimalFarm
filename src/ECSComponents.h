@@ -143,7 +143,7 @@ public:
 
 		AnimationList.push_back(Animations[_name]);
 	};
-	void ClearAnimation() { AnimationList.clear(); };
+	void ClearAnimation() {  AnimationList.clear(); };
 	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _totalFrames = 0, int _framesPerRow = 0, int _speed = 100, Camera _cam = Camera());
 	Matrix4 GetModelMatrix() { return modelMatrix; };
 	Vec3 getPos() { return pos; };

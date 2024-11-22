@@ -2,16 +2,12 @@
 #include "ECS.h"
 #include "ECSComponents.h"
 #include <SDL.h>
+#include <cstring>
 
-// Static Manager instance
+
 static Manager manager;
 
-// std::vector<std::shared_ptr<Entity>> luaEntities;
-// std::shared_ptr<Entity> AddLuaEntity(const std::string& name) {
-//         auto entity = std::make_shared<Entity>(manager.addEntity(name));
-//         luaEntities.push_back(entity);
-//         return entity;
-// }
+
 
 void Bridge::process_sdl_event(const SDL_Event &event)
 {
@@ -48,6 +44,7 @@ void Bridge::process_sdl_event(const SDL_Event &event)
     if (lua["on_event"].valid())
     {
         lua["on_event"](lua_event);
+
     }
 }
 
@@ -60,6 +57,9 @@ void Bridge::SetupBridge()
     lua.open_libraries(sol::lib::base);
     register_key_constants();
     register_controller_constants();
+    lua.set_function("req", [this](const char* script) {
+        this->req(script);
+    });
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
 
@@ -209,18 +209,84 @@ void Bridge::SetupBridge()
        // "isCollidingWithTag", &ColliderComponent::isCollidingWithTag
     );
 
-    lua["manager"] = &manager;
+        lua.new_usertype<GameScene>("GameScene",
+        sol::constructors<GameScene()>(),
+        "getName", &GameScene::name,
+        "getSceneNumber", &GameScene::scenenum,
+        "changeScene", sol::overload(
+            [this](GameScene &scn, const char *name) {
+                std::cout << "C++: changeScene called with name: " << name << std::endl;
 
-    // Load Lua scripts
-    std::string sceneFolder = "./src/scenes";
+
+            manager.clearEntities();
+            manager.refresh();
+            if(lua["on_event"].valid()){
+                lua["on_event"] = sol::nil;
+            }
+            if(lua["update"].valid()){
+                lua["update"] = sol::nil;
+            }
+    
+            lua["manager"] = &manager;
+            lua["GameScene"] = &scn;
+
+                lua.script_file(("./src/scenes/" + std::string(name) + ".lua").c_str());
+            }
+           //[this](GameScene &scn, int num) {
+           //    std::cout << "C++: changeScene called with scene number: " << num << std::endl;
+           //     manager.clearEntities();
+           //     manager.refresh();
+           //     if(lua["on_event"].valid()){
+           //         lua["on_event"] = sol::nil;
+           //     }
+           //     if(lua["update"].valid()){
+           //         lua["update"] = sol::nil;
+           //     }
+           //     std::cout << "Current scene: " << scenes[num].name << std::endl;
+           //     lua["manager"] = &manager;
+           //     lua["GameScene"] = &scn;
+           //     lua.script_file(("./src/scenes/" + std::string(scenes[num].name) + ".lua").c_str());
+           //}
+        ));
+
+
+    lua["manager"] = &manager;
+    lua["GameScene"] = &current_scene;
+
+
+    // Load Lua scenes
+    ini.SetUnicode();
+	ini.LoadFile("config.ini");
+	current_scene.name = ini.GetValue("DefaultScene", "scene");
+    current_scene.scenenum = 0;
+    scenes.push_back(current_scene);
+
+    const char * sceneFolder = "./src/scenes";
+    lua.script_file((std::string(sceneFolder) + "/" + current_scene.name + ".lua").c_str());
+
+    int i = 0;
+
     for (const auto &entry : std::filesystem::directory_iterator(sceneFolder))
     {
         if (entry.is_regular_file() && entry.path().extension() == ".lua")
         {
-            lua.script_file(entry.path().string());
+            if(entry.path().filename().string() == (std::string(current_scene.name) + ".lua")){
+                continue;
+            } else {
+                i++;
+                int num = i; 
+                scenes.push_back(GameScene(entry.path().filename().string().c_str(), num));
+                std::cout << "Loaded scene: " << entry.path().filename().string() << " (" << num << ")" << std::endl;
+            }
+
+
         }
     }
+
+
+
 }
+
 
 void Bridge::Update(float deltaTime)
 {
@@ -251,6 +317,19 @@ void Bridge::Render() const
 
 
 }
+
+void Bridge::req(const char* script) {
+    std::string scriptPath = script;
+
+    if (scriptPath.find(".lua") == std::string::npos) {
+        scriptPath += ".lua";
+    }
+    if (scriptPath.find('/') == std::string::npos) {
+        scriptPath = "./src/scripts/" + scriptPath;
+    }
+    lua.script_file(scriptPath.c_str());
+}
+
 
 void Bridge::CreateGameObject(const std::string &name)
 {
