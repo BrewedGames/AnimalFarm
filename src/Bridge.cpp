@@ -4,9 +4,12 @@
 #include <SDL.h>
 #include <cstring>
 #include <set>
+#include <algorithm>
 
 static Manager manager;
 std::set<std::string> initial_globals;
+
+
 
 void remove_new_globals(sol::state& lua, const std::set<std::string>& initial_globals) {
     sol::table globals = lua["_G"];
@@ -41,6 +44,22 @@ std::set<std::string> get_global_keys(sol::state& lua) {
     return keys;
 }
 
+
+void sortEntitiesByY(std::vector<std::shared_ptr<Entity>>& dynamicEntities) {
+    std::sort(dynamicEntities.begin(), dynamicEntities.end(),
+              [](const std::shared_ptr<Entity>& a, const std::shared_ptr<Entity>& b) {
+                  if (!a->hasComponent<SpriteComponent>() || !b->hasComponent<SpriteComponent>()) {
+                      return false;
+                  }
+
+                  float a_bottom = a->getComponent<SpriteComponent>().getPos().y - 
+                                   (a->getComponent<SpriteComponent>().GetHeight() / 2);
+                  float b_bottom = b->getComponent<SpriteComponent>().getPos().y - 
+                                   (b->getComponent<SpriteComponent>().GetHeight() / 2);
+
+                  return a_bottom > b_bottom; // Larger y values go last
+              });
+}
 
 void Bridge::process_sdl_event(const SDL_Event &event)
 {
@@ -140,6 +159,7 @@ void Bridge::SetupBridge()
                               { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh);
 
     lua.new_usertype<Entity>("Entity",
+    "isStatic", &Entity::isStatic,
     "getID", &Entity::getID,
     "getName", &Entity::getName,
     "setName", &Entity::setName,
@@ -348,20 +368,39 @@ void Bridge::Update(float deltaTime)
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Update(deltaTime) : 0;
         entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Update(deltaTime) : 0;
     }
+
 }
 
-void Bridge::Render() const
-{
+void Bridge::Render() const {
+    std::vector<std::shared_ptr<Entity>> dynamicEntities;
+    std::vector<std::shared_ptr<Entity>> staticEntities;
 
-    for (auto &entity : manager.getEntities())
-    {
-        // std::cout << entity->getName() << std::endl;
-        entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : 0;
-        entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : 0;
-        entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : 0;
+    for (const auto& entity : manager.getEntities()) {
+        if (entity->isStatic) {
+            staticEntities.push_back(entity);
+        } else {
+            dynamicEntities.push_back(entity);
+        }
     }
 
 
+    if (!dynamicEntities.empty()) {
+        sortEntitiesByY(dynamicEntities);
+    }
+
+
+    for (const auto& entity : staticEntities) {
+        entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : void();
+        entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : void();
+        entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : void();
+    }
+
+
+    for (const auto& entity : dynamicEntities) {
+        entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : void();
+        entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : void();
+        entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : void();
+    }
 }
 
 void Bridge::req(const char* script) {

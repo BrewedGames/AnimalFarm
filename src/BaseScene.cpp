@@ -25,22 +25,7 @@ using namespace std;
 
 template <typename T>
 using refPtr = std::shared_ptr<T>;
-
-static unordered_map<refPtr<Entity>, int> entityMap;
-
 static Manager manager;
-// static Entity &TestEntity(manager.addEntity("TestEntity"));
-// static Entity &TestCollider(manager.addEntity("TestCollider"));
-// static Entity &Capsule(manager.addEntity("Capsule"));
-// static Entity &Square(manager.addEntity("Square"));
-// static Entity &background(manager.addEntity("background"));
-
-// static Entity &LuaEntity(manager.addEntity("LuaEntity"));
-
-static Entity &Skull(manager.addEntity("skull"));
-
-
-
 
 
 union SDL_Event;
@@ -85,8 +70,6 @@ bool BaseScene::OnCreate()
         }
     }
 
-
-
     return true;
 }
 
@@ -98,7 +81,6 @@ void BaseScene::OnDestroy()
         SDL_GameControllerClose(controller);
         controller = nullptr;
     }
-
 }
 
 void BaseScene::HandleEvents(const SDL_Event &sdlEvent)
@@ -290,6 +272,7 @@ void BaseScene::Update(const float deltaTime)
         break;
     }
 
+
 }
 
 void BaseScene::DubugGUI()
@@ -368,8 +351,8 @@ void BaseScene::Render() const
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
     bridge.Render();
+
 
     if (isDebugging)
     {
@@ -380,6 +363,7 @@ void BaseScene::Render() const
     }
 
     drawInWireMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
     glUseProgram(0);
 }

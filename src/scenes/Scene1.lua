@@ -17,6 +17,8 @@ local SkullModel = skull:addMeshComponent()
 local angle = 0
 
 
+squirrel.isStatic = false
+
 -- after switching scenes anything that was set in the previous scene will be deleted 
 -- this includes globals and scripts that were set in the previous scene
 -- however if you want to keep something between scenes you can use the constGlobal function

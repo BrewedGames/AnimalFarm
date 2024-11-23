@@ -80,6 +80,7 @@ private:
 
 public:
     bool active = true;
+    bool isStatic = true;
     Entity() : id(nextID++) {}
     ~Entity() {
         if (isDestroying) return; // Prevent re-entrance

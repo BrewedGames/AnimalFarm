@@ -146,6 +146,8 @@ public:
 	void ClearAnimation() {  AnimationList.clear(); };
 	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _totalFrames = 0, int _framesPerRow = 0, int _speed = 100, Camera _cam = Camera());
 	Matrix4 GetModelMatrix() { return modelMatrix; };
+	float GetWidth() { return image_width; };
+	float GetHeight() { return image_height; };
 	Vec3 getPos() { return pos; };
 	void setPos(Vec3 _pos) { pos = _pos; };
 	void setPosX(float _x) { pos.x = _x; };

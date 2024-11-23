@@ -4,6 +4,8 @@ print("hello from the player script")
 
 player = manager:addEntity("Player")
 
+player.isStatic = false
+
 sprite = player:addSpriteComponent()
 playerCollider = player:addColliderComponent()
 
