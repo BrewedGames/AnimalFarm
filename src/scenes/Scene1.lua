@@ -1,147 +1,147 @@
-local background = manager:addEntity("Background")
-local squirrel = manager:addEntity("Squirrel")
-local skull = manager:addEntity("Skull")
+-- Newton-Raphson square root function
+local function sqrt(number)
+    if number <= 0 then return 0 end -- Ensure the number is positive
+    local guess = number / 2
+    for _ = 1, 10 do -- Perform 10 iterations
+        guess = (guess + number / guess) / 2
+    end
+    return guess
+end
 
+-- Pythagorean theorem to calculate distance
+local function calculateDistance(dx, dy)
+    return sqrt(dx * dx + dy * dy) -- Distance between two points
+end
 
--- load another lua script
+-- Move entities toward a direction
+local function moveEntity(sprite, collider, dx, dy, speed, delta_time)
+    local pos = sprite:getPos() -- Position of the sprite
+    local distance = calculateDistance(dx, dy) -- Calculate distance
+    local directionX, directionY = dx / distance, dy / distance -- Normalize direction
+    local newX = pos.x + directionX * speed * delta_time -- New x position
+    local newY = pos.y + directionY * speed * delta_time -- New y position
+
+    -- Update sprite and collider positions
+    sprite:setPos(Vec3(newX, newY, pos.z))
+    collider:setPos(Vec3(newX, newY, pos.z))
+end
+
+-- Initialize entities with sprite and collider
+local function initEntity(name, spritePath, width, height, position, colliderRad, tag)
+    local entity = manager:addEntity(name) -- Add new entity
+    local sprite = entity:addSpriteComponent() -- Add sprite component
+    local collider = entity:addColliderComponent() -- Add collider component
+    sprite:loadSprite(spritePath, width, height, position) -- Load the sprite
+    
+    if colliderRad then -- If collider radius is provided
+        collider:addCircleCollider(position.x, position.y, colliderRad) -- Add circle collider
+        if tag then 
+            collider:setTag(tag) -- Set collider tag if provided
+        end 
+    end
+
+    return entity, sprite, collider -- Return the entity components
+end
+
+-- Initialize background entity and its image
+local background, backgroundSprite = initEntity("Background", "./static/chicken_map.jpg", 1280, 720, Vec3(640, 360, 0))
+
+-- Initialize chicken entity with image and collider
+local chicken, chickenSprite, chickenCollider = initEntity("chicken", "./static/chicken.png", 500, 500, Vec3(640, 360, 0), 60, "chicken")
+
+-- Initialize slipper entity with image, collider, and off-screen position
+local slipper, slipperSprite, slipperCollider = initEntity("slipper", "./static/chicken_slipper_attack.png", 400, 400, Vec3(-1000, -1000, 0), 10, "slipper")
+
+-- Load and initialize the existing player file
 req("player")
+local playerData = initPlayer()
+local playerSprite, playerCollider = playerData.sprite, playerData.collider
 
+-- Variables for slipper behavior
+local slipperSpeed, slipperTimer, slipperCooldown = 300, 0, 5 -- Speed, timer, and cooldown for slipper
+local isSlipperActive = false -- Check if slipper is active
+local slipperDirection = Vec3(0, 0, 0) -- Direction slipper is thrown
+local offScreen = Vec3(-1000, -1000, 0) -- Off-screen position to hide slipper when inactive
 
-local squirrelSprite = squirrel:addSpriteComponent()
-local audio  = player:addAudioComponent()
-local squirrelCollider = squirrel:addColliderComponent()
+-- Function to handle slipper throwing
+local function throwSlipper(delta_time)
+    if isSlipperActive then -- If slipper is active
+        local pos = slipperSprite:getPos() -- Get current position
+        pos.x = pos.x + slipperDirection.x * slipperSpeed * delta_time -- Update x position
+        pos.y = pos.y + slipperDirection.y * slipperSpeed * delta_time -- Update y position
+        slipperSprite:setPos(pos) -- Update slipper sprite position
+        slipperCollider:setPos(pos) -- Update slipper collider position
 
-local backgroundImage = background:addSpriteComponent()
+        -- Check collision with player
+        if playerCollision(playerCollider, slipperCollider) then
+            print("Player lost 10 health")
+            isSlipperActive = false -- Deactivate slipper
+            slipperSprite:setPos(offScreen) -- Move slipper off-screen
+            slipperCollider:setPos(offScreen) -- Move collider off-screen
+        end
 
-local SkullModel = skull:addMeshComponent()
-local angle = 0
+        -- Decrease slipper timer
+        slipperTimer = slipperTimer - delta_time
+        if slipperTimer <= 0 then -- If timer runs out
+            isSlipperActive = false -- Deactivate slipper
+            slipperSprite:setPos(offScreen) -- Move slipper off-screen
+            slipperCollider:setPos(offScreen) -- Move collider off-screen
+        end
+    elseif slipperTimer <= 0 then -- If slipper is not active and cooldown is over
+        local chickenPos, playerPos = chickenSprite:getPos(), playerSprite:getPos() -- Get positions
+        local dx, dy = playerPos.x - chickenPos.x, playerPos.y - chickenPos.y -- Calculate direction
+        local distance = calculateDistance(dx, dy) -- Calculate distance
+        slipperDirection = Vec3(dx / distance, dy / distance, 0) -- Normalize direction
+        slipperSprite:setPos(chickenPos) -- Move slipper to chicken's position
+        slipperCollider:setPos(chickenPos) -- Update collider position
 
+        isSlipperActive = true -- Activate slipper
+        slipperTimer = slipperCooldown -- Reset slipper timer
 
-squirrel.isStatic = false
+        -- Optional: Change chicken sprite to attack sprite
+        -- chickenSprite:loadSprite("./static/chicken_attack.png", 100, 120, chickenPos)
+    else
+        slipperTimer = slipperTimer - delta_time -- Decrease cooldown timer
+    end
+end
 
--- after switching scenes anything that was set in the previous scene will be deleted 
--- this includes globals and scripts that were set in the previous scene
--- however if you want to keep something between scenes you can use the constGlobal function
-constGlobal("a_very_important_constant", 10)
+-- Update slipper when inactive
+local function updateSlipper()
+    if not isSlipperActive then -- If slipper is not active
+        slipperSprite:setPos(offScreen) -- Move slipper off-screen
+        slipperCollider:setPos(offScreen) -- Move collider off-screen
+    end
+end
 
+-- Collision detection functions
+function rectCollision(otherCollider, playerCollider)
+    if otherCollider:isColliding(playerCollider) then
+        return true
+    end
+    return false
+end
 
--- if you want to load a Mesh with defualt values 
--- SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg")
--- or you can specify the values
-SkullModel:loadMesh("./src/meshes/Skull.obj", "./src/textures/skull_texture.jpg", Vec3(600, 200, 0), Vec3(50, 50, 50), Vec3(90, 0, 0))
+function playerCollision(playerCollider, otherCollider)
+    if playerCollider:isColliding(otherCollider) then
+        return true
+    end
+    return false
+end
 
-
-local testVec = Vec3(1, 2, 3)
-print("Created Vec3:", testVec.x, testVec.y, testVec.z)
-
-squirrelSprite:loadSprite("./static/starstruck_color.png", 100, 100, Vec3(500, 500, 0))
-backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350, 200, 0))
-
-audio:setAudio("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3", true)
-audio:setVolume(50) 
-audio:Play()
-
-
-squirrelCollider:setTag("Squirrel")
-squirrelCollider:addCircleCollider(squirrelSprite:getPos().x, squirrelSprite:getPos().y, 60)
-
-
-local pos = squirrelSprite:getPos()
-print("Player sprite position:", pos.x, pos.y, pos.z)
-
-
+-- Event handling function
 function on_event(event)
-   -- print("Event received in Lua with type: " .. event.type .. ", key: " .. tostring(event.key)) -- Debugging
     if event.type == "keydown" then
         key_states[event.key] = true
-        if key_states["s"] then
-            sprite:clearAnimation()
-            sprite:playAnimation("WalkBack")
-        end
-        if key_states["d"] then
-            sprite:clearAnimation()
-            sprite:playAnimation("WalkRight")
-        end
-        if key_states["w"] then
-            sprite:clearAnimation()
-            sprite:playAnimation("WalkFront")
-        end
-        if key_states["a"] then
-            sprite:clearAnimation()
-            sprite:playAnimation("WalkLeft")
-        end
-        if key_states["space"] then
-            print(GameScene) -- Verify it prints a userdata reference, not nil or a function
-
-           GameScene:changeScene("DemoScene")
-
-        end
     elseif event.type == "keyup" then
-        sprite:clearAnimation()
         key_states[event.key] = false
     end
 end
 
-
-
+-- Update function called every frame
 function update(delta_time)
+    handlePlayerInput(key_states, playerSprite) -- Update player input
+    playerCollider:setPos(playerSprite:getPos()) -- Update player collider position
 
-
-    angle = angle + 30.0 * delta_time
-    SkullModel:setRotation(Vec3(angle, angle, 0))
-
-    playerCollider:setPos(Vec3(sprite:getPos().x, sprite:getPos().y, sprite:getPos().z))
-
-    if playerCollider:isColliding(squirrelCollider) then
-       -- print("Collision detected")
-    end
-
-
-    if key_states["s"] then
-        sprite:setPos(Vec3(sprite:getPos().x, sprite:getPos().y - 1, sprite:getPos().z, 0))
-    end
-    if key_states["d"] then
-        sprite:setPos(Vec3(sprite:getPos().x + 1, sprite:getPos().y, sprite:getPos().z, 0))
-    end
-    if key_states["w"] then
-        sprite:setPos(Vec3(sprite:getPos().x, sprite:getPos().y + 1, sprite:getPos().z, 0))
-    end
-    if key_states["a"] then
-        sprite:setPos(Vec3(sprite:getPos().x - 1, sprite:getPos().y, sprite:getPos().z, 0))
-    end
-
-        if controller_state[SDL_CONTROLLER_AXIS_LEFTX] > 8000 then
-            print("Moving right with left stick")
-        elseif controller_state[SDL_CONTROLLER_AXIS_LEFTX] < -8000 then
-            print("Moving left with left stick")
-        end
-    
-        if controller_state[SDL_CONTROLLER_AXIS_LEFTY] > 8000 then
-            print("Moving down with left stick")
-        elseif controller_state[SDL_CONTROLLER_AXIS_LEFTY] < -8000 then
-            print("Moving up with left stick")
-        end
-    
-        if controller_state[SDL_CONTROLLER_AXIS_RIGHTX] > 8000 then
-            print("Looking right with right stick")
-        elseif controller_state[SDL_CONTROLLER_AXIS_RIGHTX] < -8000 then
-            print("Looking left with right stick")
-        end
-    
-        if controller_state[SDL_CONTROLLER_AXIS_RIGHTY] > 8000 then
-            print("Looking down with right stick")
-        elseif controller_state[SDL_CONTROLLER_AXIS_RIGHTY] < -8000 then
-            print("Looking up with right stick")
-        end
-    
-
-        if controller_state[SDL_CONTROLLER_AXIS_TRIGGERLEFT] > 8000 then
-            print("Left trigger pressed")
-        end
-        if controller_state[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] > 8000 then
-            print("Right trigger pressed")
-        end
+    throwSlipper(delta_time) -- Handle slipper throwing
+    updateSlipper() -- Update slipper when inactive
 end
----------------------------WARNING-------------------------------
--- Update Loops anything called after Update will not be called--
------------------------------------------------------------------
