@@ -394,6 +394,13 @@ bool ColliderComponent::isColliding(ColliderComponent *other)
 			return hasCollided;
 		}
 		break;
+	case Collider::Type::Capsule:
+		switch (collider.type) 
+		{
+		case Collider::Type::Capsule:
+			hasCollided = c2AABBtoCapsule(collider.aabb, other->collider.capsule);
+			return hasCollided;
+		}
 	}
 	return false;
 }

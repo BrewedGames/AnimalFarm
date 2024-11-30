@@ -45,34 +45,73 @@ function initPlayer()
 end
 
 local prevDir = nil
+local screenWidth = 1280
+local screenHeight = 720
+local playerWidth = 100
+local playerHeight = 100
 function handlePlayerInput(key_states, sprite)
-		local direction
-		if key_states["s"] then
-			direction = "WalkBack"
-			sprite:setPos(Vec3(sprite:getPos().x, sprite:getPos().y-1,sprite:getPos().z))
-		elseif key_states["d"] then
-			direction = "WalkRight"
-			sprite:setPos(Vec3(sprite:getPos().x + 1, sprite:getPos().y,sprite:getPos().z))
-		elseif key_states["w"] then
-			direction = "WalkFront"
-			sprite:setPos(Vec3(sprite:getPos().x, sprite:getPos().y+1,sprite:getPos().z))
-		elseif key_states["a"] then
-			direction = "WalkLeft"
-			sprite:setPos(Vec3(sprite:getPos().x - 1, sprite:getPos().y,sprite:getPos().z))
-		else
-			direction = nil
-		end
+    local direction
+    local newX = sprite:getPos().x
+    local newY = sprite:getPos().y
 
-		if direction ~= lastDir then
-			sprite:clearAnimation()
-			if direction then
-				sprite:playAnimation(direction)
-			end
-			lastDir = direction
-		end
+    if key_states["s"] then
+        direction = "WalkBack"
+        newY = newY - 1
+    elseif key_states["d"] then
+        direction = "WalkRight"
+        newX = newX + 1
+    elseif key_states["w"] then
+        direction = "WalkFront"
+        newY = newY + 1
+    elseif key_states["a"] then
+        direction = "WalkLeft"
+        newX = newX - 1
+    else
+        direction = nil
+    end
+
+    if newX < 0 then
+        newX = 0
+    elseif newX > screenWidth - playerWidth then
+        newX = screenWidth - playerWidth
+    end
+
+    if newY < 0 then
+        newY = 0
+    elseif newY > screenHeight - playerHeight then
+        newY = screenHeight - playerHeight
+    end
+
+    sprite:setPos(Vec3(newX, newY, sprite:getPos().z))
+
+    if direction ~= prevDir then
+        sprite:clearAnimation()
+        if direction then
+            sprite:playAnimation(direction)
+        end
+        prevDir = direction
+    end
 end
 
-function rectCollision(otherCollider, playerCollider)
+--might change
+function handleCollision(playerCollider, otherCollider, playerSprite, bounceAmountX, bounceAmountY)
+    if playerCollider:isColliding(otherCollider) then
+        local playerPos = playerSprite:getPos()
+        local otherPos = otherCollider:getPos()
+        
+        local bounceDirection = Vec3(
+            playerPos.x > otherPos.x and 1 or -1,
+            playerPos.y > otherPos.y and 1 or -1, 0
+        )
+        
+        playerSprite:setPos(Vec3(
+            playerPos.x + bounceDirection.x * bounceAmountX,
+            playerPos.y + bounceDirection.y * bounceAmountY, playerPos.z
+        ))
+    end
+end
+
+function rectCollision(otherCollider, playerCollider, otherWidth, otherHeight)
 	if(otherCollider:isColliding(playerCollider))then
 		return true
 	end

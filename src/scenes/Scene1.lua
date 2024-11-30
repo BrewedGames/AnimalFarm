@@ -193,10 +193,11 @@ function update(delta_time)
     handlePlayerInput(key_states, playerSprite) --update player
     playerCollider:setPos(playerSprite:getPos()) --update player collider pos
 
-    
-    if rectCollision(playerCollider, rightCol) then
-        print("aaaa")
-    end
+    --handles walking into tables
+    handleCollision(playerCollider, leftCol, playerSprite, 90, 1)
+    handleCollision(playerCollider, rightCol, playerSprite, -40, 10)
+    handleCollision(playerCollider, rightBCol, playerSprite, -40, 40)
+    handleCollision(playerCollider, topCol, playerSprite, 1, -70)
 
     rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino chase
     rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino dash
