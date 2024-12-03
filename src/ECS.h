@@ -178,6 +178,21 @@ public:
                        std::end(entities));
     }
 
+    void removeEntity(const std::string& name) 
+    {
+        auto it = std::remove_if(std::begin(entities), std::end(entities),
+            [&name](const std::shared_ptr<Entity>& entity) 
+            {
+                return entity->getName() == name;
+            });
+
+        if (it != entities.end()) 
+        {
+            entities.erase(it);
+            refresh();
+        }
+    }
+
     Entity &addEntity(const std::string &name = "")
     {
         Entity *e = new Entity();

@@ -156,7 +156,7 @@ void Bridge::SetupBridge()
                               //},
 
                               "addEntity", [](Manager &manager, const std::string &name) -> Entity &
-                              { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh);
+                              { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh, "removeEntity", &Manager::removeEntity);
 
     lua.new_usertype<Entity>("Entity",
     "isStatic", &Entity::isStatic,

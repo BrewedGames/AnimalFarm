@@ -14,12 +14,12 @@ local function calculateDistance(dx, dy)
 end
 
 --move entities towards a direction
-local function moveEntity(sprite, collider, dx, dy, speed, delta_time)
+local function moveEntity(sprite, collider, dx, dy, speed, delta_time, dampening)
     local pos = sprite:getPos()--pos of sprite
     local distance = calculateDistance(dx, dy)--calc distance
     local directionX, directionY = dx / distance, dy / distance --normalize
-    local newX = pos.x + directionX * speed * delta_time --new x
-    local newY = pos.y + directionY * speed * delta_time --new y
+    local newX = pos.x + directionX * speed * dampening * delta_time --new x
+    local newY = pos.y + directionY * speed * dampening * delta_time --new y
 
     --update sprite and collider positions
     sprite:setPos(Vec3(newX, newY, pos.z))
@@ -94,7 +94,7 @@ local function rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time)
     local distance = calculateDistance(dx, dy) --calculate distance to player
 
     if distance > dashDistance and distance <= chaseDistance then --if within range
-        moveEntity(rhinoSprite, rhinoCollider, dx, dy, chaseSpeed, delta_time) --chase player
+        moveEntity(rhinoSprite, rhinoCollider, dx, dy, chaseSpeed, delta_time, 0.5) --chase player
     end
 end
 
@@ -110,11 +110,11 @@ local function rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time)
     local distance = calculateDistance(dx, dy) --calculate distance to player
     
     if distance <= dashDistance then --if within range
-        moveEntity(rhinoSprite, rhinoCollider, dx, dy, dashSpeed, delta_time) --dash
+        moveEntity(rhinoSprite, rhinoCollider, dx, dy, dashSpeed, delta_time, 1) --dash
 
         --if enemy player collision while dash
         if playerCollision(playerCollider, rhinoCollider) then
-            print("Player lost 25 health") 
+            playerData.decreaseHealth(25)
             dashTimer = dashCooldown --reset cooldown
         end
     end
@@ -134,7 +134,7 @@ local function throwSausage(delta_time)
 
         --if sausage and player collide
         if playerCollision(playerCollider, sausageCollider) then
-            print("Player lost 5 health")
+            playerData.decreaseHealth(5)
             isSausageActive = false --deactivate sausage
 
             --reset rhino sprite
@@ -180,6 +180,23 @@ local function updateSausages()
     end
 end
 
+local rhinoHealth = 100
+local function playerAttack(playerCollider, rhinoCollider, key_states)
+    if key_states["e"] then
+        if playerCollision(playerCollider, rhinoCollider) then
+            print("Rhino was attacked!")
+            rhinoHealth = rhinoHealth - 10
+        end
+    end
+end
+
+local function updateRhinoHealth()
+    if rhinoHealth <= 0 then
+        manager:removeEntity("rhino")
+        --change scene too
+    end
+end
+
 function on_event(event)
     if event.type == "keydown" then
         key_states[event.key] = true
@@ -190,18 +207,22 @@ end
 
 function update(delta_time)
 
-    handlePlayerInput(key_states, playerSprite) --update player
+    updateRhinoHealth()
+    handlePlayerInput(key_states, playerSprite, delta_time) --update player
     playerCollider:setPos(playerSprite:getPos()) --update player collider pos
 
-    --handles walking into tables
-    handleCollision(playerCollider, leftCol, playerSprite, 90, 1)
-    handleCollision(playerCollider, rightCol, playerSprite, -40, 10)
-    handleCollision(playerCollider, rightBCol, playerSprite, -40, 40)
-    handleCollision(playerCollider, topCol, playerSprite, 1, -70)
+    playerAttack(playerCollider, rhinoCollider, key_states)
 
     rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino chase
     rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino dash
 
     throwSausage(delta_time) --throw sausage
     updateSausages() --update when inactive
+
+    --handles walking into tables
+    handleCollision(playerCollider, leftCol, playerSprite, 90, 10)
+    handleCollision(playerCollider, rightCol, playerSprite, -40, 10)
+    handleCollision(playerCollider, rightBCol, playerSprite, -40, 40)
+    handleCollision(playerCollider, topCol, playerSprite, 1, -70)
+    handleCollision(playerCollider, rhinoCollider, playerSprite, 5, 5)
 end
