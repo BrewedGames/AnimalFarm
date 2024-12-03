@@ -49,6 +49,51 @@ squirrelCollider:addCircleCollider(squirrelSprite:getPos().x, squirrelSprite:get
 local pos = squirrelSprite:getPos()
 print("Player sprite position:", pos.x, pos.y, pos.z)
 
+<<<<<<< Updated upstream
+=======
+--to hide sausage when inactive
+local function updateSausages()
+    if not isSausageActive then --if not active
+        sausageSprite:setPos(offScreen) --move sausage sprite
+        sausageCollider:setPos(offScreen) --move sausage collider
+    end
+end
+
+local rhinoHealth = 100
+local function playerAttack(playerCollider, rhinoCollider, key_states)
+    if key_states["e"] then
+        if playerCollision(playerCollider, rhinoCollider) then
+            print("Rhino was attacked!")
+            rhinoHealth = rhinoHealth - 100
+        end
+    end
+end
+
+local rhinoDed = false;
+local function updateRhinoHealth()
+    if rhinoHealth <= 0 then
+        manager:removeEntity("rhino")
+        rhinoDed = true
+    end
+end
+
+local doorCreated = false
+local function nextBoss()
+    if rhinoDed then
+        local door, doorCollider = initRectCol("door", Vec3(640, 360, 0), 50, 100, "door")
+
+        if not doorCreated then 
+            local doorSprite = door:addSpriteComponent()
+            doorSprite:loadSprite("./static/door.png", 50, 100, Vec3(665, 410, 0))
+            doorCreated = true
+        end
+
+        if playerCollision(playerCollider, doorCollider) then
+            GameScene:changeScene("Hyena")
+        end
+    end
+end
+>>>>>>> Stashed changes
 
 function on_event(event)
    -- print("Event received in Lua with type: " .. event.type .. ", key: " .. tostring(event.key)) -- Debugging
@@ -87,6 +132,7 @@ end
 function update(delta_time)
 
 
+<<<<<<< Updated upstream
     angle = angle + 30.0 * delta_time
     SkullModel:setRotation(Vec3(angle, angle, 0))
 
@@ -141,6 +187,26 @@ function update(delta_time)
         if controller_state[SDL_CONTROLLER_AXIS_TRIGGERRIGHT] > 8000 then
             print("Right trigger pressed")
         end
+=======
+    if not rhinoDed then
+        playerAttack(playerCollider, rhinoCollider, key_states)
+
+        rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino chase
+        rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino dash
+
+        throwSausage(delta_time) --throw sausage
+        updateSausages() --update when inactive
+    end
+
+    --handles walking into tables
+    handleCollision(playerCollider, leftCol, playerSprite, 90, 10)
+    handleCollision(playerCollider, rightCol, playerSprite, -40, 10)
+    handleCollision(playerCollider, rightBCol, playerSprite, -40, 40)
+    handleCollision(playerCollider, topCol, playerSprite, 1, -70)
+    handleCollision(playerCollider, rhinoCollider, playerSprite, 5, 5)
+
+    nextBoss()
+>>>>>>> Stashed changes
 end
 ---------------------------WARNING-------------------------------
 -- Update Loops anything called after Update will not be called--
