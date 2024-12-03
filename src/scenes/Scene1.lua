@@ -185,15 +185,33 @@ local function playerAttack(playerCollider, rhinoCollider, key_states)
     if key_states["e"] then
         if playerCollision(playerCollider, rhinoCollider) then
             print("Rhino was attacked!")
-            rhinoHealth = rhinoHealth - 10
+            rhinoHealth = rhinoHealth - 100
         end
     end
 end
 
+local rhinoDed = false;
 local function updateRhinoHealth()
     if rhinoHealth <= 0 then
         manager:removeEntity("rhino")
-        --change scene too
+        rhinoDed = true
+    end
+end
+
+local doorCreated = false
+local function nextBoss()
+    if rhinoDed then
+        local door, doorCollider = initRectCol("door", Vec3(640, 360, 0), 50, 100, "door")
+
+        if not doorCreated then 
+            local doorSprite = door:addSpriteComponent()
+            doorSprite:loadSprite("./static/door.png", 50, 100, Vec3(665, 410, 0))
+            doorCreated = true
+        end
+
+        if playerCollision(playerCollider, doorCollider) then
+            GameScene:changeScene("Hyena")
+        end
     end
 end
 
@@ -211,13 +229,15 @@ function update(delta_time)
     handlePlayerInput(key_states, playerSprite, delta_time) --update player
     playerCollider:setPos(playerSprite:getPos()) --update player collider pos
 
-    playerAttack(playerCollider, rhinoCollider, key_states)
+    if not rhinoDed then
+        playerAttack(playerCollider, rhinoCollider, key_states)
 
-    rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino chase
-    rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino dash
+        rhinoChase(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino chase
+        rhinoDash(rhinoSprite, rhinoCollider, playerSprite, delta_time) --call rhino dash
 
-    throwSausage(delta_time) --throw sausage
-    updateSausages() --update when inactive
+        throwSausage(delta_time) --throw sausage
+        updateSausages() --update when inactive
+    end
 
     --handles walking into tables
     handleCollision(playerCollider, leftCol, playerSprite, 90, 10)
@@ -225,4 +245,6 @@ function update(delta_time)
     handleCollision(playerCollider, rightBCol, playerSprite, -40, 40)
     handleCollision(playerCollider, topCol, playerSprite, 1, -70)
     handleCollision(playerCollider, rhinoCollider, playerSprite, 5, 5)
+
+    nextBoss()
 end
