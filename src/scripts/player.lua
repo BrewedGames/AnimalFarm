@@ -128,7 +128,6 @@ function rectCollision(otherCollider, playerCollider, otherWidth, otherHeight)
 	return false
 end
 
-
 function playerCollision(playerCollider, otherCollider)
 	if(playerCollider:isColliding(otherCollider))then
 		return true
