@@ -224,7 +224,6 @@ function on_event(event)
 end
 
 function update(delta_time)
-
     updateRhinoHealth()
     handlePlayerInput(key_states, playerSprite, delta_time) --update player
     playerCollider:setPos(playerSprite:getPos()) --update player collider pos

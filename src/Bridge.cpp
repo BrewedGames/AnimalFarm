@@ -5,6 +5,7 @@
 #include <cstring>
 #include <set>
 #include <algorithm>
+#include "math.h"
 
 static Manager manager;
 std::set<std::string> initial_globals;
@@ -115,6 +116,16 @@ void Bridge::SetupBridge()
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
 
+    //ouioui
+    lua["odd"] = lua.create_table_with(
+        "sin", [](float x) { return std::sin(x); },
+        "cos", [](float x) { return std::cos(x); },
+        "tan", [](float x) { return std::tan(x); },
+        "deg", [](float x) { return x * (180.0f / M_PI); },
+        "rad", [](float x) { return x * (M_PI / 180.0f); },
+        "pi", M_PI
+    );
+
 
     lua["_PERSISTENT_GLOBALS"] = lua.create_table();
 
@@ -125,7 +136,6 @@ void Bridge::SetupBridge()
         persistent_globals[name] = value;
         globals[name] = value; 
     });
-
 
 
     lua.new_usertype<MATH::Vec3>("Vec3", sol::constructors<MATH::Vec3(), MATH::Vec3(float, float, float)>(),

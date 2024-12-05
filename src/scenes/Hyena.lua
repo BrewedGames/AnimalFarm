@@ -632,7 +632,7 @@ end
 
 local rectEntity = manager:addEntity("rotatingRect")
 local rectCollider = rectEntity:addColliderComponent()
-rectCollider:addRectCollider(-1000,-1000, 500, 20)
+rectCollider:addRectCollider(-1000, -1000, 500, 20)
 local rectSprite = rectEntity:addSpriteComponent()
 rectSprite:loadSprite("./static/door.png", 500, 20, Vec3(-1000, -1000, 0))
 rectCollider:setTag("rect")
@@ -642,11 +642,11 @@ local spinDuration = 20
 local spawnInterval = 5
 local rotating = false
 local angle = 0
-local radius = 20
+local radius = 100
 local rectPos = Vec3(0, 0, 0)
 
 local function startRotation(hyenaPos)
-    rectPos = Vec3(hyenaPos.x + radius, hyenaPos.y, hyenaPos.z)
+    rectPos = hyenaPos
     rectSprite:setPos(rectPos)
     rectCollider:setPos(rectPos)
     rotating = true
@@ -655,32 +655,19 @@ end
 
 local function updateRotation(delta_time)
     if rotating then
-        local steps = 360
-        local stepSize = (360 / steps) * 200
-
-        angle = angle + stepSize * delta_time
-        if angle >= 360 then
-            angle = angle - 360
+        local angularSpeed = 2 * odd.pi / spinDuration
+        angle = angle + angularSpeed * delta_time
+        if angle >= 2 * odd.pi then
+            angle = angle - 2 * odd.pi
         end
 
-        local xOffset = radius * (angle % steps) / steps
-        local yOffset = radius * (angle % steps) / steps
+        local hyenaPos = hyenaSprite:getPos()
         
-        rectPos.x = hyenaSprite:getPos().x + xOffset
-        rectPos.y = hyenaSprite:getPos().y + yOffset
-
-        local forFixingCol = Vec3(250, 8, 0)
+        rectPos.x = hyenaPos.x + radius * odd.cos(angle)
+        rectPos.y = hyenaPos.y + radius * odd.sin(angle)
 
         rectSprite:setPos(rectPos)
-        rectCollider:setPos(rectPos - forFixingCol)
-
-        rotateTimer = rotateTimer + delta_time
-        if rotateTimer >= spinDuration then
-            rectSprite:setPos(offScreen)
-            rectCollider:setPos(offScreen)
-            rotating = false
-            rotateTimer = 0
-        end
+        rectCollider:setPos(rectPos - Vec3(250, 8, 0))
     end
 end
 
@@ -701,7 +688,6 @@ function on_event(event)
 end
 
 function update(delta_time)
-
     updateHyenaHealth()
     handlePlayerInput(key_states, playerSprite, delta_time)
     playerCollider:setPos(playerSprite:getPos())
