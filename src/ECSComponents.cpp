@@ -390,13 +390,12 @@ bool ColliderComponent::isColliding(ColliderComponent *other)
 }
 bool isCollidingWithTag(char *tag) { return false; }
 
-
-
-MeshComponent::MeshComponent() : ECSComponent(nullptr){}
+MeshComponent::MeshComponent() : ECSComponent(nullptr) {}
 
 MeshComponent::~MeshComponent() {}
 
-void MeshComponent::loadMesh(const char *mesh_filename_, const char *texture_filename_, Vec3 pos, Vec3 scale, Vec3 rotation) {
+void MeshComponent::loadMesh(const char *mesh_filename_, const char *texture_filename_, Vec3 pos, Vec3 scale, Vec3 rotation)
+{
 	mesh_filename = mesh_filename_;
 	texture_filename = texture_filename_;
 	mesh = new Mesh(mesh_filename);
@@ -405,10 +404,9 @@ void MeshComponent::loadMesh(const char *mesh_filename_, const char *texture_fil
 	_pos = pos;
 	_scale = scale;
 
-
-  	Matrix4 rotationMatrixX = MMath::rotate(rotation.x, Vec3(0.0f, 1.0f, 0.0f));
-    Matrix4 rotationMatrixY = MMath::rotate(rotation.y, Vec3(1.0f, 0.0f, 0.0f)); 
-    Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f)); 
+	Matrix4 rotationMatrixX = MMath::rotate(rotation.x, Vec3(0.0f, 1.0f, 0.0f));
+	Matrix4 rotationMatrixY = MMath::rotate(rotation.y, Vec3(1.0f, 0.0f, 0.0f));
+	Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f));
 
 	combinedRotation = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
 	initTransform();
@@ -427,7 +425,8 @@ void MeshComponent::loadMesh(const char *mesh_filename_, const char *texture_fil
 
 bool MeshComponent::OnCreate() { return true; }
 void MeshComponent::OnDestroy() {}
-void MeshComponent::Update(const float deltaTime) {
+void MeshComponent::Update(const float deltaTime)
+{
 	initTransform();
 }
 void MeshComponent::Render() const
@@ -449,6 +448,87 @@ void MeshComponent::Render() const
 	glDisable(GL_DEPTH_TEST);
 }
 void MeshComponent::Render(GLenum drawmode) const {}
+
+ButtonComponent::ButtonComponent() : ECSComponent(nullptr) {}
+ButtonComponent::~ButtonComponent() {}
+void ButtonComponent::OnDestroy() {}
+void ButtonComponent::Update(float deltaTime) {
+	if(!isHovered && !isPressed){
+		buttonState = -1;
+	}else if(isHovered && !isPressed){
+		buttonState = 0;
+	}else if(!isHovered && isPressed || isHovered && isPressed){
+		buttonState = 1;
+	}
+}
+void ButtonComponent::Render() const {
+	ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+	const_cast<ButtonComponent*>(this)->RenderTexturedButton(drawList, button.ButtonTexture, button.ButtonHoveredTexture, button.ButtonPressedTexture, ImVec2(button.position.x, button.position.y), ImVec2(button.size.x, button.size.y));
+}
+
+void ButtonComponent::RenderTexturedButton(ImDrawList *drawList, GLuint ButtonTextureID, GLuint ButtonHoveredTextureID, GLuint ButtonPressedTextureID, ImVec2 position, ImVec2 size)
+{
+
+
+	GLuint currentTextureID = ButtonTextureID;
+	if (isPressed) {
+        currentTextureID = ButtonPressedTextureID; 
+    } else if (isHovered) {
+        currentTextureID = ButtonHoveredTextureID; 
+    }else{
+		currentTextureID = ButtonTextureID;
+	}
+
+	drawList->AddImage(
+		(void *)(intptr_t)currentTextureID,
+		position,
+		ImVec2(position.x + size.x, position.y + size.y));
+
+}
+GLuint ButtonComponent::LoadTexture(const char *filePath)
+{
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	int width, height, channels;
+	unsigned char *data = stbi_load(filePath, &width, &height, &channels, 4);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		w = width;
+		h = height;
+	}
+	else
+	{
+		std::cerr << "Failed to load texture: " << filePath << std::endl;
+		return 0;
+	}
+	stbi_image_free(data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	return textureID;
+}
+
+void ButtonComponent::LoadButton(const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale) {
+
+	GLuint ButtonTextureID = LoadTexture(ButtonTexture);
+    GLuint ButtonHoveredTextureID = LoadTexture(ButtonHoveredTexture);
+    GLuint ButtonPressedTextureID = LoadTexture(ButtonPressedTexture);
+
+	button.position = position;
+	button.size = Vec2(scale * w, scale * h);
+	button.ButtonTexture = ButtonTextureID;
+	button.ButtonHoveredTexture = ButtonHoveredTextureID;
+	button.ButtonPressedTexture = ButtonPressedTextureID;
+
+
+}
 
 ShaderComponent::ShaderComponent(ECSComponent *parent_, const char *vertFilename_, const char *fragFilename_,
 								 const char *tessCtrlFilename_, const char *tessEvalFilename_,

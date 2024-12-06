@@ -17,6 +17,7 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "stb_image.h"
 
 using namespace std;
 
@@ -27,6 +28,8 @@ template <typename T>
 using refPtr = std::shared_ptr<T>;
 static Manager manager;
 
+//static Entity &TestButton(manager.addEntity("TestButton"));
+//static Entity &TestButton2(manager.addEntity("TestButton2"));
 
 union SDL_Event;
 
@@ -70,7 +73,13 @@ bool BaseScene::OnCreate()
         }
     }
 
+
+    //TestButton.addComponent<ButtonComponent>().LoadButton( "./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 300), 0.2f);
+    //TestButton2.addComponent<ButtonComponent>().LoadButton( "./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 350), 0.2f);
+
+
     return true;
+
 }
 
 void BaseScene::OnDestroy()
@@ -263,6 +272,10 @@ void BaseScene::Update(const float deltaTime)
         break;
     case 1:
         // JoystickMovement();
+
+        //TestButton.getComponent<ButtonComponent>().Update(deltaTime);
+        //TestButton2.getComponent<ButtonComponent>().Update(deltaTime);
+
         break;
     default:
         if (NUMOFJOYSTICKS > 1)
@@ -272,8 +285,11 @@ void BaseScene::Update(const float deltaTime)
         break;
     }
 
+    //std::cout << TestButton.getComponent<ButtonComponent>().getCurrentButtonPressed() << std::endl;
 
+    // TestButton.getComponent<ButtonComponent>().Update(deltaTime);
 }
+
 
 void BaseScene::DubugGUI()
 {
@@ -342,6 +358,63 @@ void BaseScene::DubugGUI()
     }
 
     ImGui::End();
+
+
+   //////////////////////////// TEXTURED BUTTON //////////////////////////
+
+    //TestButton.getComponent<ButtonComponent>().Render();
+    //TestButton2.getComponent<ButtonComponent>().Render();
+
+   //ImGuiStyle &style = ImGui::GetStyle();
+   //style.Colors[ImGuiCol_Button] = ImVec4(0, 0, 0, 0);
+   //style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0, 0, 0, 0);
+   //style.Colors[ImGuiCol_ButtonActive] = ImVec4(0, 0, 0, 0);
+
+
+   //ButtonTextureID = LoadTexture("./static/SampleButton.png");
+   //ButtonHoveredTextureID = LoadTexture("./static/SampleButtonHovered.png");
+   //ButtonPressedTextureID = LoadTexture("./static/SampleButtonPressed.png");
+
+   //ImGui::Begin("Button", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+   //ImGui::SetWindowSize(ImVec2(w, h));
+   //ImGui::SetWindowPos("Button", ImVec2(600, 300));
+
+ 
+   //ImVec2 buttonSize(w / 5, h / 5);
+   //ImVec2 buttonPos = ImGui::GetCursorScreenPos();
+
+
+   //ImGui::SetCursorScreenPos(buttonPos);
+   //bool isClicked = ImGui::InvisibleButton("InvisibleButton", buttonSize);
+
+   //bool isHovered = ImGui::IsItemHovered();
+   //bool isActive = ImGui::IsItemActive();
+
+   //
+   //GLuint currentTextureID = ButtonTextureID;
+   //if (isActive)
+   //{
+   //    currentTextureID = ButtonPressedTextureID;
+   //}
+   //else if (isHovered)
+   //{
+   //    currentTextureID = ButtonHoveredTextureID;
+   //}
+
+   //ImGui::GetWindowDrawList()->AddImage(
+   //    (void *)(intptr_t)currentTextureID,
+   //    buttonPos,
+   //    ImVec2(buttonPos.x + buttonSize.x, buttonPos.y + buttonSize.y));
+
+   //if (isClicked)
+   //{
+   //    std::cout << "Button clicked!" << std::endl;
+   //}
+
+   //ImGui::End();
+
+   //// Reset the theme back to default
+   //ImGui::StyleColorsStarStruck();
 }
 
 void BaseScene::Render() const
@@ -352,7 +425,7 @@ void BaseScene::Render() const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     bridge.Render();
-
+    // TestButton.getComponent<ButtonComponent>().Render();
 
     if (isDebugging)
     {
@@ -363,7 +436,6 @@ void BaseScene::Render() const
     }
 
     drawInWireMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 
     glUseProgram(0);
 }

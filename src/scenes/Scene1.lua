@@ -1,6 +1,8 @@
 local background = manager:addEntity("Background")
 local squirrel = manager:addEntity("Squirrel")
 local skull = manager:addEntity("Skull")
+local startButton = manager:addEntity("Startbutton")
+local exitButton = manager:addEntity("Exitbutton")
 
 
 -- load another lua script
@@ -16,6 +18,10 @@ local backgroundImage = background:addSpriteComponent()
 local SkullModel = skull:addMeshComponent()
 local angle = 0
 
+local startbutton = startButton:addButtonComponent()
+local exitbutton = exitButton:addButtonComponent()
+startbutton:loadButton("./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 300), 0.3)
+exitbutton:loadButton("./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 250), 0.3)
 
 squirrel.isStatic = false
 
@@ -39,7 +45,7 @@ backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(35
 
 audio:setAudio("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3", true)
 audio:setVolume(50) 
-audio:Play()
+--audio:Play()
 
 
 squirrelCollider:setTag("Squirrel")
@@ -70,6 +76,9 @@ function on_event(event)
             sprite:clearAnimation()
             sprite:playAnimation("WalkLeft")
         end
+        if key_states["x"] then
+            startbutton:setButtonHovered(true)
+        end
         if key_states["space"] then
             print(GameScene) -- Verify it prints a userdata reference, not nil or a function
 
@@ -78,6 +87,7 @@ function on_event(event)
         end
     elseif event.type == "keyup" then
         sprite:clearAnimation()
+        startbutton:setButtonHovered(false)
         key_states[event.key] = false
     end
 end
@@ -86,7 +96,7 @@ end
 
 function update(delta_time)
 
-
+    print("Start button State: ", startbutton:getButtonState())
     angle = angle + 30.0 * delta_time
     SkullModel:setRotation(Vec3(angle, angle, 0))
 

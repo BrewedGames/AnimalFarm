@@ -28,6 +28,8 @@
 #include "Mesh.h"
 #include "Texture.h"
 
+#include "imgui/imgui.h"
+
 class Mesh;
 class Texture;
 
@@ -143,7 +145,7 @@ public:
 
 		AnimationList.push_back(Animations[_name]);
 	};
-	void ClearAnimation() {  AnimationList.clear(); };
+	void ClearAnimation() { AnimationList.clear(); };
 	bool LoadSprite(const char *filename, float _width, float _height, Vec3 _pos, bool _isAnimated = false, int _totalFrames = 0, int _framesPerRow = 0, int _speed = 100, Camera _cam = Camera());
 	Matrix4 GetModelMatrix() { return modelMatrix; };
 	float GetWidth() { return image_width; };
@@ -253,8 +255,8 @@ public:
 	void Render(GLenum drawmode) const;
 
 	void loadMesh(const char *mesh_filename_, const char *texture_filename_, Vec3 pos = Vec3(0.0f, 0.0f, 0.0f),
-						  Vec3 scale = Vec3(50.0f, 50.0f, 50.0f),
-						  Vec3 rotation = Vec3(0.0f, 0.0f, 0.0f));
+				  Vec3 scale = Vec3(50.0f, 50.0f, 50.0f),
+				  Vec3 rotation = Vec3(0.0f, 0.0f, 0.0f));
 	Vec3 pos() { return _pos; }
 	Vec3 scale() { return _scale; }
 	Vec3 rotation() { return _rotation; }
@@ -262,17 +264,18 @@ public:
 
 	void initTransform()
 	{
-		_transform =  MMath::translate(_pos) * combinedRotation * MMath::scale(_scale);
+		_transform = MMath::translate(_pos) * combinedRotation * MMath::scale(_scale);
 	}
 	void setPos(Vec3 pos) { _pos = pos; }
-	void setScale(Vec3 scale) { _scale = scale;  }
-	void setRotation(Vec3 rotation) {
-		 _rotation = rotation; 
-	Matrix4 rotationMatrixX = MMath::rotate(rotation.x, Vec3(0.0f, 1.0f, 0.0f));
-    Matrix4 rotationMatrixY = MMath::rotate(rotation.y, Vec3(1.0f, 0.0f, 0.0f)); 
-    Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f)); 
+	void setScale(Vec3 scale) { _scale = scale; }
+	void setRotation(Vec3 rotation)
+	{
+		_rotation = rotation;
+		Matrix4 rotationMatrixX = MMath::rotate(rotation.x, Vec3(0.0f, 1.0f, 0.0f));
+		Matrix4 rotationMatrixY = MMath::rotate(rotation.y, Vec3(1.0f, 0.0f, 0.0f));
+		Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f));
 
-	combinedRotation = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
+		combinedRotation = rotationMatrixZ * rotationMatrixY * rotationMatrixX;
 	}
 	void setMappedColors(Vec3 colors) { mesh->setMappedColors(colors); };
 	inline GLuint getTextureID() const { return texture->getTextureID(); }
@@ -281,8 +284,46 @@ public:
 };
 
 
+class ButtonComponent : public ECSComponent
+{
+private:
+	int w, h;
+	bool isPressed = false;
+	bool isHovered = false;
+	int buttonState = -1;
 
 
+	struct Button
+	{
+		Vec2 position;
+		Vec2 size;
+ 		GLuint ButtonTexture;
+        GLuint ButtonHoveredTexture;
+        GLuint ButtonPressedTexture;
+	};
+
+	Button button;
+
+	void RenderTexturedButton(ImDrawList* drawList, GLuint ButtonTextureID, GLuint ButtonHoveredTextureID, GLuint ButtonPressedTextureID, ImVec2 position, ImVec2 size);
+	GLuint LoadTexture(const char *filePath);
+	
+
+public:
+	ButtonComponent();
+	~ButtonComponent();
+	bool OnCreate() { return true; }
+	void OnDestroy();
+	void Update(float deltaTime);
+	void Render() const;
+
+//	void LoadButton(SDL_GameController * _controller ,const char* ButtonTexture, const char* ButtonHoveredTexture, const char* ButtonPressedTexture, Vec2 position, float scale);
+	void LoadButton(const char* ButtonTexture, const char* ButtonHoveredTexture, const char* ButtonPressedTexture, Vec2 position, float scale);
+	void setButtonHovered(bool hovered) { isHovered = hovered;  buttonState = 0; }
+	void setButtonPressed(bool pressed) { isPressed = pressed; buttonState = 1; }
+	bool isButtonPressed() { return isPressed; }
+	bool isButtonHovered() { return isHovered; }
+	int getButtonState() { return buttonState; }
+};
 
 class ShaderComponent : public ECSComponent
 {

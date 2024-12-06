@@ -9,21 +9,23 @@
 static Manager manager;
 std::set<std::string> initial_globals;
 
-
-
-void remove_new_globals(sol::state& lua, const std::set<std::string>& initial_globals) {
+void remove_new_globals(sol::state &lua, const std::set<std::string> &initial_globals)
+{
     sol::table globals = lua["_G"];
     sol::table persistent_globals = globals["_PERSISTENT_GLOBALS"];
 
-    for (const auto& kvp : globals) {
+    for (const auto &kvp : globals)
+    {
         sol::object key = kvp.first;
 
-        if (key.get_type() == sol::type::string) {
+        if (key.get_type() == sol::type::string)
+        {
             std::string global_name = key.as<std::string>();
 
             // Skip initial globals and persistent globals
             if (initial_globals.find(global_name) == initial_globals.end() &&
-                !persistent_globals[global_name].valid()) {
+                !persistent_globals[global_name].valid())
+            {
                 globals[global_name] = sol::lua_nil;
                 std::cout << "Removed: " << global_name << "\n";
             }
@@ -31,30 +33,35 @@ void remove_new_globals(sol::state& lua, const std::set<std::string>& initial_gl
     }
 }
 
-std::set<std::string> get_global_keys(sol::state& lua) {
+std::set<std::string> get_global_keys(sol::state &lua)
+{
     std::set<std::string> keys;
     sol::table globals = lua["_G"];
 
-    for (const auto& kvp : globals) {
+    for (const auto &kvp : globals)
+    {
         sol::object key = kvp.first;
-        if (key.get_type() == sol::type::string) {
+        if (key.get_type() == sol::type::string)
+        {
             keys.insert(key.as<std::string>());
         }
     }
     return keys;
 }
 
-
-void sortEntitiesByY(std::vector<std::shared_ptr<Entity>>& dynamicEntities) {
+void sortEntitiesByY(std::vector<std::shared_ptr<Entity>> &dynamicEntities)
+{
     std::sort(dynamicEntities.begin(), dynamicEntities.end(),
-              [](const std::shared_ptr<Entity>& a, const std::shared_ptr<Entity>& b) {
-                  if (!a->hasComponent<SpriteComponent>() || !b->hasComponent<SpriteComponent>()) {
+              [](const std::shared_ptr<Entity> &a, const std::shared_ptr<Entity> &b)
+              {
+                  if (!a->hasComponent<SpriteComponent>() || !b->hasComponent<SpriteComponent>())
+                  {
                       return false;
                   }
 
-                  float a_bottom = a->getComponent<SpriteComponent>().getPos().y - 
+                  float a_bottom = a->getComponent<SpriteComponent>().getPos().y -
                                    (a->getComponent<SpriteComponent>().GetHeight() / 2);
-                  float b_bottom = b->getComponent<SpriteComponent>().getPos().y - 
+                  float b_bottom = b->getComponent<SpriteComponent>().getPos().y -
                                    (b->getComponent<SpriteComponent>().GetHeight() / 2);
 
                   return a_bottom > b_bottom; // Larger y values go last
@@ -96,7 +103,6 @@ void Bridge::process_sdl_event(const SDL_Event &event)
     if (lua["on_event"].valid())
     {
         lua["on_event"](lua_event);
-
     }
 }
 
@@ -109,45 +115,77 @@ void Bridge::SetupBridge()
     lua.open_libraries(sol::lib::base);
     register_key_constants();
     register_controller_constants();
-    lua.set_function("req", [this](const char* script) {
-        this->req(script);
-    });
+    lua.set_function("req", [this](const char *script)
+                     { this->req(script); });
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
 
-
     lua["_PERSISTENT_GLOBALS"] = lua.create_table();
 
-
-    lua.set_function("constGlobal", [this](const std::string& name, sol::object value) {
+    lua.set_function("constGlobal", [this](const std::string &name, sol::object value)
+                     {
         sol::table globals = lua["_G"];
         sol::table persistent_globals = globals["_PERSISTENT_GLOBALS"];
         persistent_globals[name] = value;
-        globals[name] = value; 
-    });
-
-
+        globals[name] = value; });
 
     lua.new_usertype<MATH::Vec3>("Vec3", sol::constructors<MATH::Vec3(), MATH::Vec3(float, float, float)>(),
 
-       
-                                 "x", &MATH::Vec3::x, "y", &MATH::Vec3::y, "z", &MATH::Vec3::z, "r", &MATH::Vec3::x, "g", &MATH::Vec3::y, "b", &MATH::Vec3::z,
-                                 sol::meta_function::to_string, [](const MATH::Vec3 &v)
+                                 "x", &MATH::Vec3::x, "y", &MATH::Vec3::y, "z", &MATH::Vec3::z, "r", &MATH::Vec3::x, "g", &MATH::Vec3::y, "b", &MATH::Vec3::z, sol::meta_function::to_string, [](const MATH::Vec3 &v)
                                  { return "Vec3(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ", " + std::to_string(v.z) + ")"; }, sol::meta_function::index, [](MATH::Vec3 &v, int index)
                                  { 
             if (index < 0 || index > 2) return 0.0f; 
             return v[index]; }, sol::meta_function::new_index, [](MATH::Vec3 &v, int index, float value)
                                  { 
-            if (index >= 0 && index <= 2) v[index] = value; },
-                                 sol::meta_function::addition, [](const MATH::Vec3 &lhs, const MATH::Vec3 &rhs)
+            if (index >= 0 && index <= 2) v[index] = value; }, sol::meta_function::addition, [](const MATH::Vec3 &lhs, const MATH::Vec3 &rhs)
                                  { return lhs + rhs; }, sol::meta_function::subtraction, [](const MATH::Vec3 &lhs, const MATH::Vec3 &rhs)
                                  { return lhs - rhs; }, sol::meta_function::multiplication, [](const MATH::Vec3 &vec, float scalar)
                                  { return vec * scalar; }, sol::meta_function::division, [](const MATH::Vec3 &vec, float scalar)
                                  { return vec / scalar; });
 
-    // Set Vec3 as a constructor function for Lua (Vec3(x, y, z))
     lua.set_function("Vec3", [](float x, float y, float z)
                      { return MATH::Vec3(x, y, z); });
+
+    lua.new_usertype<MATH::Vec2>("Vec2", sol::constructors<MATH::Vec2(), MATH::Vec2(float, float)>(),
+
+
+                                 "x", &MATH::Vec2::x, "y", &MATH::Vec2::y, "u", &MATH::Vec2::x, // Alias for x
+                                 "v", &MATH::Vec2::y,                                           // Alias for y
+
+
+                                 sol::meta_function::to_string, [](const MATH::Vec2 &v)
+                                 { return "Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; },
+
+                                 sol::meta_function::index, [](MATH::Vec2 &v, int index)
+                                 {
+                                     if (index == 0)
+                                         return v.x;
+                                     if (index == 1)
+                                         return v.y;
+                                     return 0.0f; 
+                                 },
+
+
+                                 sol::meta_function::new_index, [](MATH::Vec2 &v, int index, float value)
+                                 {
+        if (index == 0) v.x = value;
+        else if (index == 1) v.y = value; },
+
+                                 sol::meta_function::addition, [](const MATH::Vec2 &lhs, const MATH::Vec2 &rhs)
+                                 { return MATH::Vec2(lhs.x + rhs.x, lhs.y + rhs.y); },
+
+                                 sol::meta_function::subtraction, [](const MATH::Vec2 &lhs, const MATH::Vec2 &rhs)
+                                 { return MATH::Vec2(lhs.x - rhs.x, lhs.y - rhs.y); },
+
+                                 sol::meta_function::multiplication, [](const MATH::Vec2 &vec, float scalar)
+                                 { return MATH::Vec2(vec.x * scalar, vec.y * scalar); },
+
+                                 sol::meta_function::division, [](const MATH::Vec2 &vec, float scalar)
+                                 { return MATH::Vec2(vec.x / scalar, vec.y / scalar); });
+
+
+    lua.set_function("Vec2", [](float x, float y)
+                     { return MATH::Vec2(x, y); });
 
     // Bind other classes (Manager, Entity, SpriteComponent)
     lua.new_usertype<Manager>("Manager",
@@ -158,27 +196,12 @@ void Bridge::SetupBridge()
                               "addEntity", [](Manager &manager, const std::string &name) -> Entity &
                               { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh);
 
-    lua.new_usertype<Entity>("Entity",
-    "isStatic", &Entity::isStatic,
-    "getID", &Entity::getID,
-    "getName", &Entity::getName,
-    "setName", &Entity::setName,
-    "addSpriteComponent", [](Entity &entity) -> SpriteComponent & { 
-    return entity.addComponent<SpriteComponent>(); 
-    }, "getSpriteComponent",
-     &Entity::getComponent<SpriteComponent>, 
-     "addAudioComponent", [](Entity &entity) -> AudioComponent &
-    { return entity.addComponent<AudioComponent>(); 
-    }, "getAudioComponent",
-     &Entity::getComponent<AudioComponent>,
-    "addColliderComponent", [](Entity& entity) -> ColliderComponent& {
-        return entity.addComponent<ColliderComponent>();
-    },
-    "getColliderComponent", &Entity::getComponent<ColliderComponent>,
-    "addMeshComponent", [](Entity& entity) -> MeshComponent& {
-    return entity.addComponent<MeshComponent>();
-    },
-    "getMeshComponent", &Entity::getComponent<MeshComponent>
+    lua.new_usertype<Entity>("Entity", "isStatic", &Entity::isStatic, "getID", &Entity::getID, "getName", &Entity::getName, "setName", &Entity::setName, "addSpriteComponent", [](Entity &entity) -> SpriteComponent &
+                             { return entity.addComponent<SpriteComponent>(); }, "getSpriteComponent", &Entity::getComponent<SpriteComponent>, "addAudioComponent", [](Entity &entity) -> AudioComponent &
+                             { return entity.addComponent<AudioComponent>(); }, "getAudioComponent", &Entity::getComponent<AudioComponent>, "addColliderComponent", [](Entity &entity) -> ColliderComponent &
+                             { return entity.addComponent<ColliderComponent>(); }, "getColliderComponent", &Entity::getComponent<ColliderComponent>, "addMeshComponent", [](Entity &entity) -> MeshComponent &
+                             { return entity.addComponent<MeshComponent>(); }, "getMeshComponent", &Entity::getComponent<MeshComponent>, "addButtonComponent", [](Entity &entity) -> ButtonComponent &
+                             { return entity.addComponent<ButtonComponent>(); }, "getButtonComponent", &Entity::getComponent<ButtonComponent>
 
                              //"addShaderComponent", [](Entity& entity) -> ShaderComponent& {
                              //    return entity.addComponent<ShaderComponent>();
@@ -187,95 +210,87 @@ void Bridge::SetupBridge()
 
     );
 
-
-
     lua.new_usertype<MeshComponent>("MeshComponent",
-     "loadMesh", sol::overload(
+                                    "loadMesh", sol::overload(
 
-        [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename, MATH::Vec3 pos, MATH::Vec3 scale, MATH::Vec3 rotation)
-        {
-            mesh.loadMesh(mesh_filename, texture_filename, pos, scale, rotation);
-        },
+                                                    [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename, MATH::Vec3 pos, MATH::Vec3 scale, MATH::Vec3 rotation)
+                                                    {
+                                                        mesh.loadMesh(mesh_filename, texture_filename, pos, scale, rotation);
+                                                    },
 
-        [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename)
-        {
-            mesh.loadMesh(mesh_filename, texture_filename);
-        }),
-        "setPos", &MeshComponent::setPos,
-        "getPos", &MeshComponent::pos,
-        "setRotation", &MeshComponent::setRotation,
-        "getRotation", &MeshComponent::rotation,
-        "setScale", &MeshComponent::setScale,
-        "getScale", &MeshComponent::scale,
-        "getTextureID", &MeshComponent::getTextureID,
-        "getImageWidth", &MeshComponent::getImageWidth,
-        "getImageHeight", &MeshComponent::getImageHeight
-    );
+                                                    [](MeshComponent &mesh, const char *mesh_filename, const char *texture_filename)
+                                                    {
+                                                        mesh.loadMesh(mesh_filename, texture_filename);
+                                                    }),
+                                    "setPos", &MeshComponent::setPos,
+                                    "getPos", &MeshComponent::pos,
+                                    "setRotation", &MeshComponent::setRotation,
+                                    "getRotation", &MeshComponent::rotation,
+                                    "setScale", &MeshComponent::setScale,
+                                    "getScale", &MeshComponent::scale,
+                                    "getTextureID", &MeshComponent::getTextureID,
+                                    "getImageWidth", &MeshComponent::getImageWidth,
+                                    "getImageHeight", &MeshComponent::getImageHeight);
 
-    lua.new_usertype<SpriteComponent>("SpriteComponent",
-        "loadSprite", sol::overload(
+    lua.new_usertype<SpriteComponent>("SpriteComponent", "loadSprite", sol::overload(
 
-        [](SpriteComponent &sprite, const char *filename, float width, float height, MATH::Vec3 pos)
-        {
-            sprite.LoadSprite(filename, width, height, pos);
-        },
+                                                                           [](SpriteComponent &sprite, const char *filename, float width, float height, MATH::Vec3 pos)
+                                                                           { sprite.LoadSprite(filename, width, height, pos); },
 
-        [](SpriteComponent &sprite, const char *filename, float width, float height, MATH::Vec3 pos, bool isAnimated, int totalFrames, int framesPerRow, int speed)
-        {
-            sprite.LoadSprite(filename, width, height, pos, isAnimated, totalFrames, framesPerRow, speed, Camera());
-        }),
-        "setPos", &SpriteComponent::setPos,
-        "getPos", &SpriteComponent::getPos,
-        "clearAnimation", &SpriteComponent::ClearAnimation,
-        "playAnimation", [](SpriteComponent &sprite, const char *animationName) {
-        sprite.PlayAnimation(animationName);
-        },
-        "setAnimation", sol::overload( // test if this works
-                            &SpriteComponent::SetAnimation, [this](SpriteComponent &sprite, const char * name, int startFrame, int endFrame, int speed)
-                            { sprite.SetAnimation(name, startFrame, endFrame, speed); }));
-
-
+                                                                           [](SpriteComponent &sprite, const char *filename, float width, float height, MATH::Vec3 pos, bool isAnimated, int totalFrames, int framesPerRow, int speed)
+                                                                           { sprite.LoadSprite(filename, width, height, pos, isAnimated, totalFrames, framesPerRow, speed, Camera()); }),
+                                      "setPos", &SpriteComponent::setPos, "getPos", &SpriteComponent::getPos, "clearAnimation", &SpriteComponent::ClearAnimation, "playAnimation", [](SpriteComponent &sprite, const char *animationName)
+                                      { sprite.PlayAnimation(animationName); }, "setAnimation", sol::overload( // test if this works
+                                                                                                    &SpriteComponent::SetAnimation, [this](SpriteComponent &sprite, const char *name, int startFrame, int endFrame, int speed)
+                                                                                                    { sprite.SetAnimation(name, startFrame, endFrame, speed); }));
 
     lua.new_usertype<AudioComponent>("AudioComponent",
-        "setAudio", sol::overload([this](AudioComponent &audio, const char *filename, bool isMusic)
-         { audio.setAudio(filename, isMusic); }, [this](AudioComponent &audio, const char *filename)
-         { audio.setAudio(filename); }),
-        "setVolume", sol::overload([this](AudioComponent &audio, float volume)
-        { audio.SetVolume(volume); }),
-        "Play", &AudioComponent::Play,
-        "Stop", &AudioComponent::Stop,
-        "Pause", &AudioComponent::Pause,
-        "Resume", &AudioComponent::Resume
-    );
+                                     "setAudio", sol::overload([this](AudioComponent &audio, const char *filename, bool isMusic)
+                                                               { audio.setAudio(filename, isMusic); }, [this](AudioComponent &audio, const char *filename)
+                                                               { audio.setAudio(filename); }),
+                                     "setVolume", sol::overload([this](AudioComponent &audio, float volume)
+                                                                { audio.SetVolume(volume); }),
+                                     "Play", &AudioComponent::Play,
+                                     "Stop", &AudioComponent::Stop,
+                                     "Pause", &AudioComponent::Pause,
+                                     "Resume", &AudioComponent::Resume);
+
+    lua.new_usertype<ButtonComponent>("ButtonComponent",
+                                      "loadButton", sol::overload([this](ButtonComponent &button, const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale)
+                                                                  { button.LoadButton(ButtonTexture, ButtonHoveredTexture, ButtonPressedTexture, position, scale); }),
+                                      "isButtonPressed", &ButtonComponent::isButtonPressed,
+                                      "isButtonHovered", &ButtonComponent::isButtonHovered,
+                                      "setButtonHovered", &ButtonComponent::setButtonHovered,
+                                      "setButtonPressed", &ButtonComponent::setButtonPressed,
+                                      "getButtonState", &ButtonComponent::getButtonState);
 
     lua["ColliderType"] = lua.create_table_with(
         "None", 0,
         "Circle", 1,
         "AABB", 2,
         "Capsule", 3,
-        "Polygon", 4
-    );
+        "Polygon", 4);
 
     lua.new_usertype<ColliderComponent>("ColliderComponent",
-        "getTag", &ColliderComponent::getTag,
-        "setTag", &ColliderComponent::setTag,
-        "getPos", &ColliderComponent::getPos,
-        "setPos", &ColliderComponent::setPos,
-        "addCircleCollider", &ColliderComponent::AddCircleCollider,
-        "addRectCollider", &ColliderComponent::AddAABBCollider,
-        "addCapsuleCollider", &ColliderComponent::AddCapsuleCollider,
-        "addPolygonCollider", &ColliderComponent::AddPolygonCollider,
-        "isColliding", &ColliderComponent::isColliding,
-        "getColliderType", &ColliderComponent::getColliderType
-       // "isCollidingWithTag", &ColliderComponent::isCollidingWithTag
+                                        "getTag", &ColliderComponent::getTag,
+                                        "setTag", &ColliderComponent::setTag,
+                                        "getPos", &ColliderComponent::getPos,
+                                        "setPos", &ColliderComponent::setPos,
+                                        "addCircleCollider", &ColliderComponent::AddCircleCollider,
+                                        "addRectCollider", &ColliderComponent::AddAABBCollider,
+                                        "addCapsuleCollider", &ColliderComponent::AddCapsuleCollider,
+                                        "addPolygonCollider", &ColliderComponent::AddPolygonCollider,
+                                        "isColliding", &ColliderComponent::isColliding,
+                                        "getColliderType", &ColliderComponent::getColliderType
+                                        // "isCollidingWithTag", &ColliderComponent::isCollidingWithTag
     );
 
-        lua.new_usertype<GameScene>("GameScene",
-        sol::constructors<GameScene()>(),
-        "getName", &GameScene::name,
-        "getSceneNumber", &GameScene::scenenum,
-        "changeScene", sol::overload(
-            [this](GameScene &scn, const char *name) {
+    lua.new_usertype<GameScene>("GameScene",
+                                sol::constructors<GameScene()>(),
+                                "getName", &GameScene::name,
+                                "getSceneNumber", &GameScene::scenenum,
+                                "changeScene", sol::overload([this](GameScene &scn, const char *name)
+                                                             {
                 std::cout << "C++: changeScene called with name: " << name << std::endl;
 
 
@@ -293,41 +308,36 @@ void Bridge::SetupBridge()
 
                 remove_new_globals(lua, initial_globals);
 
-                lua.script_file(("./src/scenes/" + std::string(name) + ".lua").c_str());
-            }
-           //[this](GameScene &scn, int num) {
-           //    std::cout << "C++: changeScene called with scene number: " << num << std::endl;
-           //     manager.clearEntities();
-           //     manager.refresh();
-           //     if(lua["on_event"].valid()){
-           //         lua["on_event"] = sol::nil;
-           //     }
-           //     if(lua["update"].valid()){
-           //         lua["update"] = sol::nil;
-           //     }
-           //     std::cout << "Current scene: " << scenes[num].name << std::endl;
-           //     lua["manager"] = &manager;
-           //     lua["GameScene"] = &scn;
-           //     lua.script_file(("./src/scenes/" + std::string(scenes[num].name) + ".lua").c_str());
-           //}
-        ));
-
+                lua.script_file(("./src/scenes/" + std::string(name) + ".lua").c_str()); }
+                                                             //[this](GameScene &scn, int num) {
+                                                             //    std::cout << "C++: changeScene called with scene number: " << num << std::endl;
+                                                             //     manager.clearEntities();
+                                                             //     manager.refresh();
+                                                             //     if(lua["on_event"].valid()){
+                                                             //         lua["on_event"] = sol::nil;
+                                                             //     }
+                                                             //     if(lua["update"].valid()){
+                                                             //         lua["update"] = sol::nil;
+                                                             //     }
+                                                             //     std::cout << "Current scene: " << scenes[num].name << std::endl;
+                                                             //     lua["manager"] = &manager;
+                                                             //     lua["GameScene"] = &scn;
+                                                             //     lua.script_file(("./src/scenes/" + std::string(scenes[num].name) + ".lua").c_str());
+                                                             //}
+                                                             ));
 
     lua["manager"] = &manager;
     lua["GameScene"] = &current_scene;
 
-
-
-    
     initial_globals = get_global_keys(lua);
     // Load Lua scenes
     ini.SetUnicode();
-	ini.LoadFile("config.ini");
-	current_scene.name = ini.GetValue("DefaultScene", "scene");
+    ini.LoadFile("config.ini");
+    current_scene.name = ini.GetValue("DefaultScene", "scene");
     current_scene.scenenum = 0;
     scenes.push_back(current_scene);
 
-    const char * sceneFolder = "./src/scenes";
+    const char *sceneFolder = "./src/scenes";
     lua.script_file((std::string(sceneFolder) + "/" + current_scene.name + ".lua").c_str());
 
     int i = 0;
@@ -336,23 +346,20 @@ void Bridge::SetupBridge()
     {
         if (entry.is_regular_file() && entry.path().extension() == ".lua")
         {
-            if(entry.path().filename().string() == (std::string(current_scene.name) + ".lua")){
+            if (entry.path().filename().string() == (std::string(current_scene.name) + ".lua"))
+            {
                 continue;
-            } else {
+            }
+            else
+            {
                 i++;
-                int num = i; 
+                int num = i;
                 scenes.push_back(GameScene(entry.path().filename().string().c_str(), num));
                 std::cout << "Loaded scene: " << entry.path().filename().string() << " (" << num << ")" << std::endl;
             }
-
-
         }
     }
-
-
-
 }
-
 
 void Bridge::Update(float deltaTime)
 {
@@ -367,54 +374,63 @@ void Bridge::Update(float deltaTime)
         entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Update(deltaTime) : 0;
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Update(deltaTime) : 0;
         entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Update(deltaTime) : 0;
+        entity->hasComponent<ButtonComponent>() ? entity->getComponent<ButtonComponent>().Update(deltaTime) : 0;
     }
-
 }
 
-void Bridge::Render() const {
+void Bridge::Render() const
+{
     std::vector<std::shared_ptr<Entity>> dynamicEntities;
     std::vector<std::shared_ptr<Entity>> staticEntities;
 
-    for (const auto& entity : manager.getEntities()) {
-        if (entity->isStatic) {
+    for (const auto &entity : manager.getEntities())
+    {
+        if (entity->isStatic)
+        {
             staticEntities.push_back(entity);
-        } else {
+        }
+        else
+        {
             dynamicEntities.push_back(entity);
         }
     }
 
-
-    if (!dynamicEntities.empty()) {
+    if (!dynamicEntities.empty())
+    {
         sortEntitiesByY(dynamicEntities);
     }
 
-
-    for (const auto& entity : staticEntities) {
+    for (const auto &entity : staticEntities)
+    {
         entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : void();
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : void();
         entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : void();
+        entity->hasComponent<ButtonComponent>() ? entity->getComponent<ButtonComponent>().Render() : void();
     }
 
-
-    for (const auto& entity : dynamicEntities) {
+    for (const auto &entity : dynamicEntities)
+    {
         entity->hasComponent<SpriteComponent>() ? entity->getComponent<SpriteComponent>().Render() : void();
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Render() : void();
         entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Render() : void();
+        entity->hasComponent<ButtonComponent>() ? entity->getComponent<ButtonComponent>().Render() : void();
     }
 }
 
-void Bridge::req(const char* script) {
+void Bridge::req(const char *script)
+{
     std::string scriptPath = script;
 
-    if (scriptPath.find(".lua") == std::string::npos) {
+    if (scriptPath.find(".lua") == std::string::npos)
+    {
         scriptPath += ".lua";
     }
-    if (scriptPath.find('/') == std::string::npos) {
+    if (scriptPath.find('/') == std::string::npos)
+    {
         scriptPath = "./src/scripts/" + scriptPath;
     }
     lua.script_file(scriptPath.c_str());
 }
-
 
 void Bridge::CreateGameObject(const std::string &name)
 {
