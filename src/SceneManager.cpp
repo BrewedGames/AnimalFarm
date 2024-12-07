@@ -180,7 +180,6 @@ void SceneManager::HandleEvents()
             {
                 [[fallthrough]]; /// C17 Prevents switch/case fallthrough warnings
             case SDL_SCANCODE_ESCAPE:
-            case SDL_SCANCODE_Q:
                 isRunning = false;
                 return;
             case SDL_SCANCODE_F1:

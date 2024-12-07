@@ -62,7 +62,7 @@ function on_event(event)
     if event.type == "keydown" then
         key_states[event.key] = true
         if key_states["space"] then
-           GameScene:changeScene("DemoScene")
+           GameScene:changeScene("Rhino")
 
         end
         if key_states["up"] then
@@ -77,7 +77,7 @@ function on_event(event)
         if key_states["z"] then
             if currentActiveButton == 0 then
                 startbutton:setButtonPressed(true)
-                GameScene:changeScene("DemoScene")
+                GameScene:changeScene("Hyena")
             elseif currentActiveButton == 1 then
                 creditbutton:setButtonPressed(true)
                 GameScene:changeScene("Credits")
@@ -97,7 +97,7 @@ function on_event(event)
         if controller_state["button_a"] then
             if currentActiveButton == 0 then
                 startbutton:setButtonPressed(true)
-                GameScene:changeScene("DemoScene")
+                GameScene:changeScene("Hyena")
             elseif currentActiveButton == 1 then
                 GameScene:changeScene("Credits")
                 creditbutton:setButtonPressed(true)

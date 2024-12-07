@@ -5,6 +5,7 @@
 #include <cstring>
 #include <set>
 #include <algorithm>
+#include "math.h"
 
 static Manager manager;
 std::set<std::string> initial_globals;
@@ -121,6 +122,17 @@ void Bridge::SetupBridge()
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
 
+    //ouioui
+    lua["odd"] = lua.create_table_with(
+        "sin", [](float x) { return std::sin(x); },
+        "cos", [](float x) { return std::cos(x); },
+        "tan", [](float x) { return std::tan(x); },
+        "deg", [](float x) { return x * (180.0f / M_PI); },
+        "rad", [](float x) { return x * (M_PI / 180.0f); },
+        "pi", M_PI
+    );
+
+
     lua["_PERSISTENT_GLOBALS"] = lua.create_table();
 
     lua.set_function("constGlobal", [this](const std::string &name, sol::object value)
@@ -190,7 +202,7 @@ void Bridge::SetupBridge()
                               //},
 
                               "addEntity", [](Manager &manager, const std::string &name) -> Entity &
-                              { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh);
+                                    { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh, "removeEntity", &Manager::removeEntity);
 
     lua.new_usertype<Entity>("Entity", "isStatic", &Entity::isStatic, "getID", &Entity::getID, "getName", &Entity::getName, "setName", &Entity::setName, "addSpriteComponent", [](Entity &entity) -> SpriteComponent &
                              { return entity.addComponent<SpriteComponent>(); }, "getSpriteComponent", &Entity::getComponent<SpriteComponent>, "addAudioComponent", [](Entity &entity) -> AudioComponent &

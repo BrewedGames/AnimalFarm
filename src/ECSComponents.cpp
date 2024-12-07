@@ -385,7 +385,16 @@ bool ColliderComponent::isColliding(ColliderComponent *other)
 			return hasCollided;
 		}
 		break;
+	case Collider::Type::Capsule:
+		switch (collider.type)
+		{
+		case Collider::Type::Capsule:
+			hasCollided = c2AABBtoCapsule(collider.aabb, other->collider.capsule);
+			return hasCollided;
+		}
+		break;
 	}
+
 	return false;
 }
 bool isCollidingWithTag(char *tag) { return false; }
@@ -452,30 +461,41 @@ void MeshComponent::Render(GLenum drawmode) const {}
 ButtonComponent::ButtonComponent() : ECSComponent(nullptr) {}
 ButtonComponent::~ButtonComponent() {}
 void ButtonComponent::OnDestroy() {}
-void ButtonComponent::Update(float deltaTime) {
-	if(!isHovered && !isPressed){
+void ButtonComponent::Update(float deltaTime)
+{
+	if (!isHovered && !isPressed)
+	{
 		buttonState = -1;
-	}else if(isHovered && !isPressed){
+	}
+	else if (isHovered && !isPressed)
+	{
 		buttonState = 0;
-	}else if(!isHovered && isPressed || isHovered && isPressed){
+	}
+	else if (!isHovered && isPressed || isHovered && isPressed)
+	{
 		buttonState = 1;
 	}
 }
-void ButtonComponent::Render() const {
-	ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-	const_cast<ButtonComponent*>(this)->RenderTexturedButton(drawList, button.ButtonTexture, button.ButtonHoveredTexture, button.ButtonPressedTexture, ImVec2(button.position.x, button.position.y), ImVec2(button.size.x, button.size.y));
+void ButtonComponent::Render() const
+{
+	ImDrawList *drawList = ImGui::GetBackgroundDrawList();
+	const_cast<ButtonComponent *>(this)->RenderTexturedButton(drawList, button.ButtonTexture, button.ButtonHoveredTexture, button.ButtonPressedTexture, ImVec2(button.position.x, button.position.y), ImVec2(button.size.x, button.size.y));
 }
 
 void ButtonComponent::RenderTexturedButton(ImDrawList *drawList, GLuint ButtonTextureID, GLuint ButtonHoveredTextureID, GLuint ButtonPressedTextureID, ImVec2 position, ImVec2 size)
 {
 
-
 	GLuint currentTextureID = ButtonTextureID;
-	if (isPressed) {
-        currentTextureID = ButtonPressedTextureID; 
-    } else if (isHovered) {
-        currentTextureID = ButtonHoveredTextureID; 
-    }else{
+	if (isPressed)
+	{
+		currentTextureID = ButtonPressedTextureID;
+	}
+	else if (isHovered)
+	{
+		currentTextureID = ButtonHoveredTextureID;
+	}
+	else
+	{
 		currentTextureID = ButtonTextureID;
 	}
 
@@ -483,7 +503,6 @@ void ButtonComponent::RenderTexturedButton(ImDrawList *drawList, GLuint ButtonTe
 		(void *)(intptr_t)currentTextureID,
 		position,
 		ImVec2(position.x + size.x, position.y + size.y));
-
 }
 GLuint ButtonComponent::LoadTexture(const char *filePath)
 {
@@ -515,19 +534,18 @@ GLuint ButtonComponent::LoadTexture(const char *filePath)
 	return textureID;
 }
 
-void ButtonComponent::LoadButton(const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale) {
+void ButtonComponent::LoadButton(const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale)
+{
 
 	GLuint ButtonTextureID = LoadTexture(ButtonTexture);
-    GLuint ButtonHoveredTextureID = LoadTexture(ButtonHoveredTexture);
-    GLuint ButtonPressedTextureID = LoadTexture(ButtonPressedTexture);
+	GLuint ButtonHoveredTextureID = LoadTexture(ButtonHoveredTexture);
+	GLuint ButtonPressedTextureID = LoadTexture(ButtonPressedTexture);
 
 	button.position = position;
 	button.size = Vec2(scale * w, scale * h);
 	button.ButtonTexture = ButtonTextureID;
 	button.ButtonHoveredTexture = ButtonHoveredTextureID;
 	button.ButtonPressedTexture = ButtonPressedTextureID;
-
-
 }
 
 ShaderComponent::ShaderComponent(ECSComponent *parent_, const char *vertFilename_, const char *fragFilename_,

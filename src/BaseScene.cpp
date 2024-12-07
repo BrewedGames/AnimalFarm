@@ -28,8 +28,6 @@ template <typename T>
 using refPtr = std::shared_ptr<T>;
 static Manager manager;
 
-//static Entity &TestButton(manager.addEntity("TestButton"));
-//static Entity &TestButton2(manager.addEntity("TestButton2"));
 
 union SDL_Event;
 
@@ -73,9 +71,6 @@ bool BaseScene::OnCreate()
         }
     }
 
-
-    //TestButton.addComponent<ButtonComponent>().LoadButton( "./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 300), 0.2f);
-    //TestButton2.addComponent<ButtonComponent>().LoadButton( "./static/SampleButton.png", "./static/SampleButtonHovered.png", "./static/SampleButtonPressed.png", Vec2(600, 350), 0.2f);
 
 
     return true;
@@ -273,8 +268,6 @@ void BaseScene::Update(const float deltaTime)
     case 1:
         // JoystickMovement();
 
-        //TestButton.getComponent<ButtonComponent>().Update(deltaTime);
-        //TestButton2.getComponent<ButtonComponent>().Update(deltaTime);
 
         break;
     default:
@@ -285,9 +278,6 @@ void BaseScene::Update(const float deltaTime)
         break;
     }
 
-    //std::cout << TestButton.getComponent<ButtonComponent>().getCurrentButtonPressed() << std::endl;
-
-    // TestButton.getComponent<ButtonComponent>().Update(deltaTime);
 }
 
 
@@ -319,102 +309,46 @@ void BaseScene::DubugGUI()
     ImGui::PlotLines("", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 80.0f, ImVec2(0, 80.0f));
     ImGui::End();
 
-    ImGui::Begin("Input", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
-    ImGui::SetWindowSize(ImVec2(200, 150));
-    ImGui::SetWindowPos("Input", ImVec2(200, 0));
-    // ImGui::Text("X: %f", TestEntity.getComponent<SpriteComponent>().X());
-    // ImGui::Text("Y: %f", TestEntity.getComponent<SpriteComponent>().Y());
-
-    if (ImGui::Button("Controller", ImVec2(100, 0)))
-    {
-        if (SDL_NumJoysticks() < 1)
-        {
-            printf("No game controller detected! Continuing with keyboard input\n");
-        }
-        else
-        {
-            NUMOFJOYSTICKS = SDL_NumJoysticks();
-            printf("Number of game controllers detected: %d\n", NUMOFJOYSTICKS);
-            controller = SDL_GameControllerOpen(0);
-            if (controller == NULL)
-            {
-                printf("Unable to open game controller: %s\n", SDL_GetError());
-            }
-            else
-            {
-                printf("Controller detected and opened!\n");
-            }
-        }
-    }
-
-    if (ImGui::Button("Keyboard", ImVec2(100, 0)))
-    {
-        NUMOFJOYSTICKS = 0;
-        printf("Switched to keyboard input\n");
-    }
-    if (IsPaused)
-    {
-        ImGui::Text("Paused");
-    }
-
-    ImGui::End();
-
-
-   //////////////////////////// TEXTURED BUTTON //////////////////////////
-
-    //TestButton.getComponent<ButtonComponent>().Render();
-    //TestButton2.getComponent<ButtonComponent>().Render();
-
-   //ImGuiStyle &style = ImGui::GetStyle();
-   //style.Colors[ImGuiCol_Button] = ImVec4(0, 0, 0, 0);
-   //style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0, 0, 0, 0);
-   //style.Colors[ImGuiCol_ButtonActive] = ImVec4(0, 0, 0, 0);
-
-
-   //ButtonTextureID = LoadTexture("./static/SampleButton.png");
-   //ButtonHoveredTextureID = LoadTexture("./static/SampleButtonHovered.png");
-   //ButtonPressedTextureID = LoadTexture("./static/SampleButtonPressed.png");
-
-   //ImGui::Begin("Button", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
-   //ImGui::SetWindowSize(ImVec2(w, h));
-   //ImGui::SetWindowPos("Button", ImVec2(600, 300));
-
- 
-   //ImVec2 buttonSize(w / 5, h / 5);
-   //ImVec2 buttonPos = ImGui::GetCursorScreenPos();
-
-
-   //ImGui::SetCursorScreenPos(buttonPos);
-   //bool isClicked = ImGui::InvisibleButton("InvisibleButton", buttonSize);
-
-   //bool isHovered = ImGui::IsItemHovered();
-   //bool isActive = ImGui::IsItemActive();
-
-   //
-   //GLuint currentTextureID = ButtonTextureID;
-   //if (isActive)
-   //{
-   //    currentTextureID = ButtonPressedTextureID;
-   //}
-   //else if (isHovered)
-   //{
-   //    currentTextureID = ButtonHoveredTextureID;
-   //}
-
-   //ImGui::GetWindowDrawList()->AddImage(
-   //    (void *)(intptr_t)currentTextureID,
-   //    buttonPos,
-   //    ImVec2(buttonPos.x + buttonSize.x, buttonPos.y + buttonSize.y));
-
-   //if (isClicked)
-   //{
-   //    std::cout << "Button clicked!" << std::endl;
-   //}
-
-   //ImGui::End();
-
-   //// Reset the theme back to default
-   //ImGui::StyleColorsStarStruck();
+    // OLD CODE FOR SWITCHING BETWEEN KEYBOARD AND CONTROLLER INPUT -zoe 
+    //ImGui::Begin("Input", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+    //ImGui::SetWindowSize(ImVec2(200, 150));
+    //ImGui::SetWindowPos("Input", ImVec2(200, 0));
+    //// ImGui::Text("X: %f", TestEntity.getComponent<SpriteComponent>().X());
+    //// ImGui::Text("Y: %f", TestEntity.getComponent<SpriteComponent>().Y());
+//
+    //if (ImGui::Button("Controller", ImVec2(100, 0)))
+    //{
+    //    if (SDL_NumJoysticks() < 1)
+    //    {
+    //        printf("No game controller detected! Continuing with keyboard input\n");
+    //    }
+    //    else
+    //    {
+    //        NUMOFJOYSTICKS = SDL_NumJoysticks();
+    //        printf("Number of game controllers detected: %d\n", NUMOFJOYSTICKS);
+    //        controller = SDL_GameControllerOpen(0);
+    //        if (controller == NULL)
+    //        {
+    //            printf("Unable to open game controller: %s\n", SDL_GetError());
+    //        }
+    //        else
+    //        {
+    //            printf("Controller detected and opened!\n");
+    //        }
+    //    }
+    //}
+//
+    //if (ImGui::Button("Keyboard", ImVec2(100, 0)))
+    //{
+    //    NUMOFJOYSTICKS = 0;
+    //    printf("Switched to keyboard input\n");
+    //}
+    //if (IsPaused)
+    //{
+    //    ImGui::Text("Paused");
+    //}
+//
+    //ImGui::End();
 }
 
 void BaseScene::Render() const
@@ -425,7 +359,7 @@ void BaseScene::Render() const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     bridge.Render();
-    // TestButton.getComponent<ButtonComponent>().Render();
+
 
     if (isDebugging)
     {
