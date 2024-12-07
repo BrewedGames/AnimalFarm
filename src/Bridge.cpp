@@ -96,7 +96,8 @@ void Bridge::process_sdl_event(const SDL_Event &event)
         else if (event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP)
         {
             bool is_pressed = (event.type == SDL_CONTROLLERBUTTONDOWN);
-            controller_state[event.cbutton.button] = is_pressed;
+            lua_event["type"] = is_pressed ? "controllerbuttondown" : "controllerbuttonup";
+            lua_event["button"] = event.cbutton.button;
         }
     }
 
@@ -112,7 +113,7 @@ Bridge::~Bridge() {}
 void Bridge::SetupBridge()
 {
     // sol::state lua;
-    lua.open_libraries(sol::lib::base);
+    lua.open_libraries(sol::lib::base, sol::lib::os);
     register_key_constants();
     register_controller_constants();
     lua.set_function("req", [this](const char *script)
@@ -148,10 +149,8 @@ void Bridge::SetupBridge()
 
     lua.new_usertype<MATH::Vec2>("Vec2", sol::constructors<MATH::Vec2(), MATH::Vec2(float, float)>(),
 
-
                                  "x", &MATH::Vec2::x, "y", &MATH::Vec2::y, "u", &MATH::Vec2::x, // Alias for x
                                  "v", &MATH::Vec2::y,                                           // Alias for y
-
 
                                  sol::meta_function::to_string, [](const MATH::Vec2 &v)
                                  { return "Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; },
@@ -162,9 +161,7 @@ void Bridge::SetupBridge()
                                          return v.x;
                                      if (index == 1)
                                          return v.y;
-                                     return 0.0f; 
-                                 },
-
+                                     return 0.0f; },
 
                                  sol::meta_function::new_index, [](MATH::Vec2 &v, int index, float value)
                                  {
@@ -182,7 +179,6 @@ void Bridge::SetupBridge()
 
                                  sol::meta_function::division, [](const MATH::Vec2 &vec, float scalar)
                                  { return MATH::Vec2(vec.x / scalar, vec.y / scalar); });
-
 
     lua.set_function("Vec2", [](float x, float y)
                      { return MATH::Vec2(x, y); });

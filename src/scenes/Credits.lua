@@ -1,0 +1,13 @@
+local background = manager:addEntity("Background")
+local overlay = manager:addEntity("Overlay")
+local moon = manager:addEntity("Moon")
+local creditimage = manager:addEntity("CreditImage")
+local creditsImage = creditimage:addSpriteComponent()
+local backgroundImage = background:addSpriteComponent()
+local moonSprite = moon:addSpriteComponent()
+local overlaySprite = overlay:addSpriteComponent()
+
+backgroundImage:loadSprite("./static/background.jpg", 1280, 720, Vec3(640, 360, 0))
+overlaySprite:loadSprite("./static/Menu_Overlay.png", 1280, 720, Vec3(640, 360, 0))
+creditsImage:loadSprite("./static/Credits.png", 1280, 720, Vec3(640, 360, 0))
+moonSprite:loadSprite("./static/Moon.png", 150, 150, Vec3(1155, 600, 0))

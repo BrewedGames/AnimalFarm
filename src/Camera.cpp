@@ -3,7 +3,7 @@
 
 Camera::Camera()
 {
-    proj = MMath::orthographic(0.0f, 1280.0f, 0.0f, 720.0f, -150.0f, 150.0f);
+    proj = MMath::orthographic(0.0f, 1280.0f, 0.0f, 720.0f, -750.0f, 750.0f);
   //  view = MMath::lookAt(Vec3(0.0f, 0.0f, 5.0f), Vec3(0.0f, 0.0f, 0.0f), Vec3(0.0f, 1.0f, 0.0f));
    // orient = Quaternion(1.0f, Vec3(0.0f, 0.0f, 0.0f));
    // pos = Vec3(0.0f, 0.0f, -5.0f);
