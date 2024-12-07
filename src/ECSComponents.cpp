@@ -191,6 +191,15 @@ void SpriteComponent::SetupQuad()
 	glBindVertexArray(0);
 }
 
+void SpriteComponent::SetRotation(float angle)
+{
+	rotation = Vec3(0.0f, 0.0f, angle);
+
+	Matrix4 rotationMatrixZ = MMath::rotate(rotation.z, Vec3(0.0f, 0.0f, 1.0f));
+
+	modelMatrix = MMath::translate(pos) * rotationMatrixZ * MMath::scale(Vec3(image_width, image_height, 1.0f));
+}
+
 bool SpriteComponent::LoadSprite(const char *_filename, float _width, float _height, Vec3 _pos, bool _isAnimated, int _totalFrames, int _framesPerRow, int _speed, Camera _cam)
 {
 

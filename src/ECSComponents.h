@@ -115,6 +115,8 @@ private:
 	Shader *animatedShader;
 	Shader *spriteShader;
 
+	Vec3 rotation;
+
 	struct Animation
 	{
 		int StartFrame;
@@ -133,6 +135,8 @@ public:
 	void Update(float deltaTime);
 	void Render() const;
 	void SetupQuad();
+
+	void SetRotation(float angle);
 
 	void SetAnimation(const char *_name, int _startFrame, int _endFrame, int _speed)
 	{

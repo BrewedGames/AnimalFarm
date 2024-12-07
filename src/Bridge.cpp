@@ -236,6 +236,7 @@ void Bridge::SetupBridge()
         }),
         "setPos", &SpriteComponent::setPos,
         "getPos", &SpriteComponent::getPos,
+        "setRotation", &SpriteComponent::SetRotation,
         "clearAnimation", &SpriteComponent::ClearAnimation,
         "playAnimation", [](SpriteComponent &sprite, const char *animationName) {
         sprite.PlayAnimation(animationName);
