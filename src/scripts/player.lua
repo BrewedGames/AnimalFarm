@@ -1,4 +1,3 @@
-
 local current = 100
 local playerspeed = 10
 local dashspeed = 50
@@ -9,7 +8,6 @@ function initPlayer()
 	local playerCollider = player:addColliderComponent()
 
 	sprite:loadSprite("./static/armidillio.png", 50, 80.4, Vec3(140, 100, 1))
-
 
 	playerCollider:setTag("Player")
 	playerCollider:addCapsuleCollider(sprite:getPos().x, sprite:getPos().y, 50, 100)
@@ -40,69 +38,70 @@ local playerHeight = 100
 
 local dashCooldown = 0
 local canDash = true
+local acceleration = 50
+local deceleration = 30
+local velocityX = 0
+local velocityY = 0
+local maxSpeed = 250 
+
 function handlePlayerInput(key_states, sprite, delta_time, player)
-    local direction
     local newX = sprite:getPos().x
     local newY = sprite:getPos().y
 
-    local speed = playerspeed
 
-    if key_states["z"] and canDash then
-        speed = dashspeed
-        canDash = false
-        dashCooldown = 5
-        print("dahsed")--maybe add these as text in game
-    elseif not canDash then
-        speed = playerspeed
+    local dx, dy = 0, 0
+
+    if key_states["up"] then
+        dy = dy + 1
     end
-
-    if not canDash then
-        dashCooldown = dashCooldown - delta_time
-        if dashCooldown < 0 then
-            dashCooldown = 0
-            canDash = true
-            print("next dash ready")--maybe add these as text in game
-        end
-    end
-
     if key_states["down"] then
-        direction = "WalkBack"
-        newY = newY - speed
-    elseif key_states["right"] then
-        direction = "WalkRight"
-        newX = newX + speed
-    elseif key_states["up"] then
-        direction = "WalkFront"
-        newY = newY + speed
-    elseif key_states["left"] then
-        direction = "WalkLeft"
-        newX = newX - speed
-    else
-        direction = nil
+        dy = dy - 1
+    end
+    if key_states["right"] then
+        dx = dx + 1
+    end
+    if key_states["left"] then
+        dx = dx - 1
     end
 
-    if newX < 0 then
-        newX = 0
-    elseif newX > screenWidth - playerWidth then
-        newX = screenWidth - playerWidth
+
+    if dx ~= 0 or dy ~= 0 then
+        local length = (dx * dx + dy * dy) ^ 0.5
+        dx = dx / length
+        dy = dy / length
     end
 
-    if newY < 0 then
-        newY = 0
-    elseif newY > screenHeight - playerHeight then
-        newY = screenHeight - playerHeight
+
+    velocityX = velocityX + dx * acceleration
+    velocityY = velocityY + dy * acceleration
+
+
+    if velocityX > maxSpeed then velocityX = maxSpeed end
+    if velocityX < -maxSpeed then velocityX = -maxSpeed end
+    if velocityY > maxSpeed then velocityY = maxSpeed end
+    if velocityY < -maxSpeed then velocityY = -maxSpeed end
+
+
+    if dx == 0 then
+        velocityX = velocityX * (1 - deceleration * delta_time)
     end
+    if dy == 0 then
+        velocityY = velocityY * (1 - deceleration * delta_time)
+    end
+
+
+    newX = newX + velocityX * delta_time
+    newY = newY + velocityY * delta_time
+
+
+    if newX < 0 then newX = 0 end
+    if newX > screenWidth - playerWidth then newX = screenWidth - playerWidth end
+    if newY < 0 then newY = 0 end
+    if newY > screenHeight - playerHeight then newY = screenHeight - playerHeight end
 
     sprite:setPos(Vec3(newX, newY, sprite:getPos().z))
-
-    if direction ~= prevDir then
-
-        if direction then
-
-        end
-        prevDir = direction
-    end
 end
+
 
 function handleCollision(playerCollider, otherCollider, playerSprite, bounceAmountX, bounceAmountY)
     if playerCollider:isColliding(otherCollider) then

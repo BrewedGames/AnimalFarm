@@ -52,6 +52,7 @@ local chicken, chickenSprite, chickenCollider = initEntity("chicken", "./static/
 -- Initialize slipper entity with image, collider, and off-screen position
 local slipper, slipperSprite, slipperCollider = initEntity("slipper", "./static/chicken_slipper_attack.png", 400, 400, Vec3(-1000, -1000, 0), 10, "slipper")
 
+
 -- Load and initialize the existing player file
 req("player")
 local playerData = initPlayer()
@@ -139,7 +140,8 @@ end
 
 -- Update function called every frame
 function update(delta_time)
-    handlePlayerInput(key_states, playerSprite) -- Update player input
+
+    handlePlayerInput(key_states, playerSprite, delta_time) --update player
     playerCollider:setPos(playerSprite:getPos()) -- Update player collider position
 
     throwSlipper(delta_time) -- Handle slipper throwing

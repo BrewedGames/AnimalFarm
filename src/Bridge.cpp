@@ -114,23 +114,13 @@ Bridge::~Bridge() {}
 void Bridge::SetupBridge()
 {
     // sol::state lua;
-    lua.open_libraries(sol::lib::base, sol::lib::os);
+    lua.open_libraries(sol::lib::base, sol::lib::os, sol::lib::math);
     register_key_constants();
     register_controller_constants();
     lua.set_function("req", [this](const char *script)
                      { this->req(script); });
     lua["controller_state"] = lua.create_table();
     lua["key_states"] = lua.create_table();
-
-    //ouioui
-    lua["odd"] = lua.create_table_with(
-        "sin", [](float x) { return std::sin(x); },
-        "cos", [](float x) { return std::cos(x); },
-        "tan", [](float x) { return std::tan(x); },
-        "deg", [](float x) { return x * (180.0f / M_PI); },
-        "rad", [](float x) { return x * (M_PI / 180.0f); },
-        "pi", M_PI
-    );
 
 
     lua["_PERSISTENT_GLOBALS"] = lua.create_table();

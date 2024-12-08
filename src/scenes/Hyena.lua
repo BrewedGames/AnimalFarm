@@ -336,8 +336,8 @@ local function initRect()
 end
 
 local function rotatePointAroundOrigin(x, y, originX, originY, angle)
-    local angleRad = odd.rad(angle)
-    local cosA, sinA = odd.cos(angleRad), odd.sin(angleRad)
+    local angleRad = math.rad(angle)
+    local cosA, sinA = math.cos(angleRad), math.sin(angleRad)
 
     local translatedX, translatedY = x - originX, y - originY
 
@@ -427,9 +427,9 @@ function update(delta_time)
             end
 
             local radius = 100
-            local angleRad = odd.rad(rectAngle)
-            local offsetX = radius * odd.cos(angleRad)
-            local offsetY = radius * odd.sin(angleRad)
+            local angleRad = math.rad(rectAngle)
+            local offsetX = radius * math.cos(angleRad)
+            local offsetY = radius * math.sin(angleRad)
 
             rectSprite:setPos(Vec3(hyenaPos.x + offsetX, hyenaPos.y + offsetY, 0))
         end
