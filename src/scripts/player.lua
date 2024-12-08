@@ -2,6 +2,8 @@ local current = 100
 local playerspeed = 10
 local dashspeed = 50
 
+local CONTROLLERTHRESHOLD = 8000
+
 function initPlayer()
 	local player = manager:addEntity("Player")
 	local sprite = player:addSpriteComponent()
@@ -62,6 +64,18 @@ function handlePlayerInput(key_states, sprite, delta_time, player)
     end
     if key_states["left"] then
         dx = dx - 1
+    end
+
+    if controller_state["left_stick_x"] > CONTROLLERTHRESHOLD then
+        dx = dx + 1
+    elseif controller_state["left_stick_x"] < -CONTROLLERTHRESHOLD then
+        dx = dx - 1
+    end
+
+    if controller_state["left_stick_y"] > CONTROLLERTHRESHOLD then
+        dy = dy - 1
+    elseif controller_state["left_stick_y"] < -CONTROLLERTHRESHOLD then
+        dy = dy + 1
     end
 
 

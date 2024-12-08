@@ -11,9 +11,12 @@ local exitButton = manager:addEntity("Exitbutton")
 local logo = manager:addEntity("Logo")
 local moon = manager:addEntity("Moon")
 
-
+local buttonAudio = manager:addEntity("ButtonAudio")
+local buttonAudioAccept = manager:addEntity("ButtonAudioAccept")
 
 local audio  = background:addAudioComponent()
+local buttonAudioComponent = buttonAudio:addAudioComponent()
+local buttonAudioAcceptComponent = buttonAudioAccept:addAudioComponent()
 
 
 local LogoSprite = logo:addSpriteComponent()
@@ -34,7 +37,7 @@ creditbutton:loadButton("./static/Credits_Button.png", "./static/Credits_Button_
 exitbutton:loadButton("./static/Exit_Button.png", "./static/Exit_Button_Hovered.png", "./static/Exit_Button_Pressed.png", Vec2(120, 450), 0.2)
 
 
-restruantModel:loadMesh("./src/meshes/Restruant.obj", "./src/textures/restruant_texture.png", Vec3(650, 100, 0), Vec3(10, 10, 10), Vec3(90, 0, 0))
+restruantModel:loadMesh("./src/meshes/Restruant.obj", "./src/textures/restruant_texture.png", Vec3(650, 50, 0), Vec3(10, 10, 10), Vec3(90, 0, 0))
 
 
 LogoSprite:loadSprite("./static/Logo.png", 360, 160.79, Vec3(250, 550, 0))
@@ -43,9 +46,17 @@ overlaySprite:loadSprite("./static/Menu_Overlay.png", 1280, 720, Vec3(640, 360, 
 moonSprite:loadSprite("./static/Moon.png", 150, 150, Vec3(1155, 600, 0))
 
 
-audio:setAudio("./src/audio/Celeste_Original_Soundtrack_First_Steps.mp3", true)
+
+audio:setAudio("./src/audio/Beauty Flow.mp3", true)
 audio:setVolume(50) 
---audio:Play()
+audio:Play()
+
+
+buttonAudioComponent:setAudio("./src/audio/button_hover.mp3", false)
+buttonAudioComponent:setVolume(100)
+
+buttonAudioAcceptComponent:setAudio("./src/audio/Button_selected.wav", false)
+buttonAudioAcceptComponent:setVolume(60)
 
 local angle = 0
 
@@ -56,7 +67,10 @@ local moveCooldown = 0.2
 local moveTimer = 0      
 
 
-
+local sceneChangePending = false
+local pendingSceneName = nil
+local sceneChangeDelay = 0.2 
+local sceneChangeTimer = 0
 
 function on_event(event)
     if event.type == "keydown" then
@@ -67,22 +81,34 @@ function on_event(event)
         end
         if key_states["up"] then
             currentActiveButton = (currentActiveButton - 1) % 3
+            buttonAudioComponent:Play()
         end
 
         if key_states["down"] then
             currentActiveButton = (currentActiveButton + 1) % 3
+            buttonAudioComponent:Play()
         end
 
 
         if key_states["z"] then
             if currentActiveButton == 0 then
                 startbutton:setButtonPressed(true)
-                GameScene:changeScene("Hyena")
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Hyena"
+                sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 1 then
                 creditbutton:setButtonPressed(true)
-                GameScene:changeScene("Credits")
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Credits"
+                sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 2 then
                 exitbutton:setButtonPressed(true)
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Exit"
+                sceneChangeTimer = sceneChangeDelay
             end
         end
     elseif event.type == "keyup" then
@@ -97,12 +123,22 @@ function on_event(event)
         if controller_state["button_a"] then
             if currentActiveButton == 0 then
                 startbutton:setButtonPressed(true)
-                GameScene:changeScene("Hyena")
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Hyena"
+                sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 1 then
-                GameScene:changeScene("Credits")
                 creditbutton:setButtonPressed(true)
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Credits"
+                sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 2 then
                 exitbutton:setButtonPressed(true)
+                buttonAudioAcceptComponent:Play()
+                sceneChangePending = true
+                pendingSceneName = "Exit"
+                sceneChangeTimer = sceneChangeDelay
             end
         end
     elseif event.type == "controllerbuttonup" then
@@ -113,14 +149,16 @@ function on_event(event)
     end
 end
 
-
+local swayAmplitude = 30.0  
+local swaySpeed = 0.5    
 
 function update(delta_time)
 
     
-    angle = angle + 10.0 * delta_time
+    local swayAngle = swayAmplitude * math.sin(swaySpeed * os.clock())
 
-    restruantModel:setRotation(Vec3(angle, 0, 0))
+
+    restruantModel:setRotation(Vec3(swayAngle, 0, 0))
 
     if currentActiveButton == 0 then
         startbutton:setButtonHovered(true)
@@ -136,7 +174,17 @@ function update(delta_time)
         exitbutton:setButtonHovered(true)
     end
 
-
+    if sceneChangePending then
+        sceneChangeTimer = sceneChangeTimer - delta_time
+        if sceneChangeTimer <= 0 then
+            if pendingSceneName == "Exit" then
+                quitGame()
+            else
+            GameScene:changeScene(pendingSceneName)
+            sceneChangePending = false
+            end
+        end
+    end
 
 
     if moveTimer > 0 then
@@ -145,12 +193,14 @@ function update(delta_time)
 
     if controller_state[SDL_CONTROLLER_AXIS_LEFTY] > 8000 and moveTimer <= 0 then
         currentActiveButton = (currentActiveButton + 1) % 3
+        buttonAudioComponent:Play()
         print("Moving down with left stick")
         moveTimer = moveCooldown
     end
 
     if controller_state[SDL_CONTROLLER_AXIS_LEFTY] < -8000 and moveTimer <= 0 then
         currentActiveButton = (currentActiveButton - 1) % 3
+        buttonAudioComponent:Play()
         print("Moving up with left stick")
         moveTimer = moveCooldown
     end
