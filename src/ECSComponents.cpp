@@ -137,22 +137,20 @@ bool SpriteComponent::OnCreate()
 void SpriteComponent::OnDestroy() {}
 void SpriteComponent::Update(float deltaTime)
 {
-	modelMatrix = MMath::translate(pos) * MMath::scale(Vec3(image_width, image_height, 1.0f));
+ 	modelMatrix = MMath::translate(pos) * MMath::rotate(rotation, Vec3(0.0f, 0.0f, 1.0f)) * MMath::scale(Vec3(image_width, image_height, 1.0f));
 
-	if (isAnimated)
-	{
-		if (!AnimationList.empty())
-		{
-			timeSinceLastFrame += deltaTime;
-			if (timeSinceLastFrame >= frameDuration)
-			{
-				// currentFrame = (currentFrame + 1) % totalFrames;  // Loop through all frames
-				// currentFrame = (currentFrame + 1) % (15 - 8 + 1) + 8; // loop through frames 8 to 15
-				currentFrame = (currentFrame + 1) % (AnimationList.back().EndFrame - AnimationList.back().StartFrame + 1) + AnimationList.back().StartFrame;
-				timeSinceLastFrame = 0.0f;
-			}
-		}
-	}
+    if (isAnimated)
+    {
+        if (!AnimationList.empty())
+        {
+            timeSinceLastFrame += deltaTime;
+            if (timeSinceLastFrame >= frameDuration)
+            {
+                currentFrame = (currentFrame + 1) % (AnimationList.back().EndFrame - AnimationList.back().StartFrame + 1) + AnimationList.back().StartFrame;
+                timeSinceLastFrame = 0.0f;
+            }
+        }
+    }
 }
 
 void SpriteComponent::SetupQuad()

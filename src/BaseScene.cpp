@@ -309,6 +309,29 @@ void BaseScene::DubugGUI()
     ImGui::PlotLines("", values, IM_ARRAYSIZE(values), values_offset, overlay, 0.0f, 80.0f, ImVec2(0, 80.0f));
     ImGui::End();
 
+
+    //ImGui::CreateContext();
+    //ImGuiIO& io = ImGui::GetIO();
+    //ImFont* customFont = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f);
+    //io.Fonts->Build();
+    //ImGui::Begin("Text", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+    //ImGui::SetWindowSize(ImVec2(200, 100));
+    //ImGui::SetWindowPos("Text", ImVec2(200, 0));
+//
+//
+    //if (customFont) {
+    //    ImGui::PushFont(customFont);  // Apply custom font
+    //}
+//
+    //ImGui::Text("This text uses the custom font :)");
+//
+    //if (customFont) {
+    //    ImGui::PopFont();  // Revert to default font
+    //}
+//
+    //ImGui::End();
+    //    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f);
+
     // OLD CODE FOR SWITCHING BETWEEN KEYBOARD AND CONTROLLER INPUT -zoe 
     //ImGui::Begin("Input", &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
     //ImGui::SetWindowSize(ImVec2(200, 150));

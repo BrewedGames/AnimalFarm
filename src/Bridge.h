@@ -37,7 +37,7 @@ public:
     void bind_controller(SDL_GameController* controller);
     void process_sdl_event(const SDL_Event &event);
     static void CreateGameObject(const std::string &name);
-    
+    void RumbleController(int low_frequency_rumble, int high_frequency_rumble, int duration);
     void OnCreate(); 
     void Update(float deltaTime);  
     void Render() const;  

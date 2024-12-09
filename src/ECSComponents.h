@@ -100,6 +100,8 @@ private:
 	int rows = 0;	 // left to right
 	int sx = 0, sy = 0;
 
+	float rotation = 0.0f;
+
 	int animationTime = 0;
 
 	int currentFrame = 0;
@@ -150,6 +152,8 @@ public:
 	Matrix4 GetModelMatrix() { return modelMatrix; };
 	float GetWidth() { return image_width; };
 	float GetHeight() { return image_height; };
+	void setRotation(float angle) { rotation = angle; }
+    float getRotation() const { return rotation; }
 	Vec3 getPos() { return pos; };
 	void setPos(Vec3 _pos) { pos = _pos; };
 	void setPosX(float _x) { pos.x = _x; };

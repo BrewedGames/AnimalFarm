@@ -76,7 +76,7 @@ function on_event(event)
     if event.type == "keydown" then
         key_states[event.key] = true
         if key_states["space"] then
-           GameScene:changeScene("Rhino")
+           GameScene:changeScene("DemoScene")
 
         end
         if key_states["up"] then
@@ -123,18 +123,21 @@ function on_event(event)
         if controller_state["button_a"] then
             if currentActiveButton == 0 then
                 startbutton:setButtonPressed(true)
+                RumbleController(35000, 40000, 150)
                 buttonAudioAcceptComponent:Play()
                 sceneChangePending = true
                 pendingSceneName = "Hyena"
                 sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 1 then
                 creditbutton:setButtonPressed(true)
+                RumbleController(35000, 40000, 150)
                 buttonAudioAcceptComponent:Play()
                 sceneChangePending = true
                 pendingSceneName = "Credits"
                 sceneChangeTimer = sceneChangeDelay
             elseif currentActiveButton == 2 then
                 exitbutton:setButtonPressed(true)
+                RumbleController(35000, 40000, 150)
                 buttonAudioAcceptComponent:Play()
                 sceneChangePending = true
                 pendingSceneName = "Exit"
@@ -193,15 +196,15 @@ function update(delta_time)
 
     if controller_state[SDL_CONTROLLER_AXIS_LEFTY] > 8000 and moveTimer <= 0 then
         currentActiveButton = (currentActiveButton + 1) % 3
+        RumbleController(20000, 25000, 70)
         buttonAudioComponent:Play()
-        print("Moving down with left stick")
         moveTimer = moveCooldown
     end
 
     if controller_state[SDL_CONTROLLER_AXIS_LEFTY] < -8000 and moveTimer <= 0 then
         currentActiveButton = (currentActiveButton - 1) % 3
+        RumbleController(20000, 25000, 70)
         buttonAudioComponent:Play()
-        print("Moving up with left stick")
         moveTimer = moveCooldown
     end
 end

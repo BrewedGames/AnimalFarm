@@ -108,6 +108,10 @@ void Bridge::process_sdl_event(const SDL_Event &event)
     }
 }
 
+void Bridge::RumbleController(int low_frequency_rumble, int high_frequency_rumble, int duration){
+    SDL_GameControllerRumble(lua_controller, low_frequency_rumble, high_frequency_rumble, duration);
+}
+
 Bridge::Bridge() {}
 Bridge::~Bridge() {}
 
@@ -124,6 +128,11 @@ void Bridge::SetupBridge()
 
 
     lua["_PERSISTENT_GLOBALS"] = lua.create_table();
+
+    lua.set_function("RumbleController", [this](int low_frequency_rumble, int high_frequency_rumble, int duration) {
+    this->RumbleController(low_frequency_rumble, high_frequency_rumble, duration);
+    });
+    
 
     lua.set_function("constGlobal", [this](const std::string &name, sol::object value)
                      {
@@ -237,7 +246,7 @@ void Bridge::SetupBridge()
 
                                                                            [](SpriteComponent &sprite, const char *filename, float width, float height, MATH::Vec3 pos, bool isAnimated, int totalFrames, int framesPerRow, int speed)
                                                                            { sprite.LoadSprite(filename, width, height, pos, isAnimated, totalFrames, framesPerRow, speed, Camera()); }),
-                                      "setPos", &SpriteComponent::setPos, "getPos", &SpriteComponent::getPos, "clearAnimation", &SpriteComponent::ClearAnimation, "playAnimation", [](SpriteComponent &sprite, const char *animationName)
+                                      "setPos", &SpriteComponent::setPos, "getPos", &SpriteComponent::getPos, "setRotation", &SpriteComponent::setRotation, "getRotation", &SpriteComponent::getRotation, "clearAnimation", &SpriteComponent::ClearAnimation, "playAnimation", [](SpriteComponent &sprite, const char *animationName)
                                       { sprite.PlayAnimation(animationName); }, "setAnimation", sol::overload( // test if this works
                                                                                                     &SpriteComponent::SetAnimation, [this](SpriteComponent &sprite, const char *name, int startFrame, int endFrame, int speed)
                                                                                                     { sprite.SetAnimation(name, startFrame, endFrame, speed); }));
