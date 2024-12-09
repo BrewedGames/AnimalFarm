@@ -89,7 +89,7 @@ bool SceneManager::Initialize(std::string name_, int width_, int height_)
     ImGui::StyleColorsStarStruck();
     ImGui_ImplSDL2_InitForOpenGL(window->getWindow(), window->getContext());
     ImGui_ImplOpenGL3_Init("#version 450");
-    io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f);
+    io.Fonts->AddFontFromFileTTF("./src/fonts/Uni-Sans-Heavy.otf", 18.0f);
 
 
     return true;

@@ -204,7 +204,8 @@ void Bridge::SetupBridge()
                                     { return manager.addEntity(name); }, "update", &Manager::Update, "render", &Manager::Render, "clearEntities", &Manager::clearEntities, "refresh", &Manager::refresh, "removeEntity", &Manager::removeEntity);
 
     lua.new_usertype<Entity>("Entity", "isStatic", &Entity::isStatic, "getID", &Entity::getID, "getName", &Entity::getName, "setName", &Entity::setName, "addSpriteComponent", [](Entity &entity) -> SpriteComponent &
-                             { return entity.addComponent<SpriteComponent>(); }, "getSpriteComponent", &Entity::getComponent<SpriteComponent>, "addAudioComponent", [](Entity &entity) -> AudioComponent &
+                             { return entity.addComponent<SpriteComponent>(); }, "getSpriteComponent", &Entity::getComponent<SpriteComponent>,"addTextComponent", [](Entity &entity) -> TextComponent &
+                             { return entity.addComponent<TextComponent>(); }, "getTextComponent", &Entity::getComponent<TextComponent>, "addAudioComponent", [](Entity &entity) -> AudioComponent &
                              { return entity.addComponent<AudioComponent>(); }, "getAudioComponent", &Entity::getComponent<AudioComponent>, "addColliderComponent", [](Entity &entity) -> ColliderComponent &
                              { return entity.addComponent<ColliderComponent>(); }, "getColliderComponent", &Entity::getComponent<ColliderComponent>, "addMeshComponent", [](Entity &entity) -> MeshComponent &
                              { return entity.addComponent<MeshComponent>(); }, "getMeshComponent", &Entity::getComponent<MeshComponent>, "addButtonComponent", [](Entity &entity) -> ButtonComponent &
@@ -238,6 +239,32 @@ void Bridge::SetupBridge()
                                     "getTextureID", &MeshComponent::getTextureID,
                                     "getImageWidth", &MeshComponent::getImageWidth,
                                     "getImageHeight", &MeshComponent::getImageHeight);
+
+
+    lua.new_usertype<TextComponent>("TextComponent",
+                                "Text", sol::overload(
+                                                [](TextComponent &text, const char *_text, int fontSize, MATH::Vec3 pos, MATH::Vec3 color, MATH::Vec3 scale)
+                                                {
+                                                    text.Text(_text, fontSize, pos, color, scale);
+                                                },
+                                                [](TextComponent &text, const char *_text, int fontSize, MATH::Vec3 pos)
+                                                {
+                                                    text.Text(_text, fontSize, pos);
+                                                },
+                                                [](TextComponent &text, const char *_text)
+                                                {
+                                                    text.Text(_text);
+                                                }),
+                                "getPos", &TextComponent::getPos,
+                                "setPos", &TextComponent::setPos,
+                                "setColor", &TextComponent::setColor,
+                                "getColor", &TextComponent::getColor,
+                                "setScale", &TextComponent::setScale,
+                                "getScale", &TextComponent::getScale,
+                                "getText", &TextComponent::getText,
+                                "setText", &TextComponent::setText,
+                                "setFontSize", &TextComponent::setFontSize,
+                                "getFontSize", &TextComponent::getFontSize);
 
     lua.new_usertype<SpriteComponent>("SpriteComponent", "loadSprite", sol::overload(
 
@@ -382,6 +409,7 @@ void Bridge::Update(float deltaTime)
         entity->hasComponent<ColliderComponent>() ? entity->getComponent<ColliderComponent>().Update(deltaTime) : 0;
         entity->hasComponent<MeshComponent>() ? entity->getComponent<MeshComponent>().Update(deltaTime) : 0;
         entity->hasComponent<ButtonComponent>() ? entity->getComponent<ButtonComponent>().Update(deltaTime) : 0;
+        entity->hasComponent<TextComponent>() ? entity->getComponent<TextComponent>().Update(deltaTime) : 0;
     }
 }
 

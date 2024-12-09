@@ -137,20 +137,20 @@ bool SpriteComponent::OnCreate()
 void SpriteComponent::OnDestroy() {}
 void SpriteComponent::Update(float deltaTime)
 {
- 	modelMatrix = MMath::translate(pos) * MMath::rotate(rotation, Vec3(0.0f, 0.0f, 1.0f)) * MMath::scale(Vec3(image_width, image_height, 1.0f));
+	modelMatrix = MMath::translate(pos) * MMath::rotate(rotation, Vec3(0.0f, 0.0f, 1.0f)) * MMath::scale(Vec3(image_width, image_height, 1.0f));
 
-    if (isAnimated)
-    {
-        if (!AnimationList.empty())
-        {
-            timeSinceLastFrame += deltaTime;
-            if (timeSinceLastFrame >= frameDuration)
-            {
-                currentFrame = (currentFrame + 1) % (AnimationList.back().EndFrame - AnimationList.back().StartFrame + 1) + AnimationList.back().StartFrame;
-                timeSinceLastFrame = 0.0f;
-            }
-        }
-    }
+	if (isAnimated)
+	{
+		if (!AnimationList.empty())
+		{
+			timeSinceLastFrame += deltaTime;
+			if (timeSinceLastFrame >= frameDuration)
+			{
+				currentFrame = (currentFrame + 1) % (AnimationList.back().EndFrame - AnimationList.back().StartFrame + 1) + AnimationList.back().StartFrame;
+				timeSinceLastFrame = 0.0f;
+			}
+		}
+	}
 }
 
 void SpriteComponent::SetupQuad()
@@ -264,6 +264,53 @@ void SpriteComponent::Render() const
 	glUseProgram(0);
 }
 
+TextComponent::TextComponent() : ECSComponent(nullptr) {}
+TextComponent::~TextComponent() {}
+
+bool TextComponent::OnCreate() { return true; }
+void TextComponent::OnDestroy() {}
+void TextComponent::Update(float deltaTime)
+{
+	bool open = true;
+
+	ImGuiIO &io = ImGui::GetIO();
+	ImFont *font = io.FontDefault;
+	if (font)
+	{
+		font->Scale = static_cast<float>(fontSize) / 16.0f;
+	}
+
+	ImVec2 textSize = ImGui::CalcTextSize(text);
+
+	const float paddingX = 20.0f;
+	const float paddingY = 15.0f;
+
+	ImVec2 windowSize = ImVec2(textSize.x + paddingX, textSize.y + paddingY);
+
+	ImGui::SetNextWindowSize(windowSize);
+	ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y));
+
+	ImGui::Begin(text, &open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+
+	ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1.0f), "%s", text);
+
+	ImGui::End();
+
+	if (font)
+	{
+		ImGui::PopFont();
+	}
+}
+void TextComponent::Render() const {}
+
+void TextComponent::Text(const char *_text, int _fontSize, Vec3 _pos, Vec3 _color, Vec3 _scale)
+{
+	text = _text;
+	fontSize = _fontSize;
+	pos = _pos;
+	color = _color;
+	scale = _scale;
+}
 ColliderComponent::ColliderComponent() : ECSComponent(nullptr)
 {
 	ini.SetUnicode();

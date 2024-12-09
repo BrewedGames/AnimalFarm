@@ -93,6 +93,9 @@ function triggerDash()
             prevDirX = prevDirX / length
             prevDirY = prevDirY / length
         end
+    else
+        RumbleController(10000, 5000, 30)
+        RumbleController(10000, 5000, 30)
     end
 end
 

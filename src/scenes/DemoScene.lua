@@ -3,6 +3,11 @@ local backgroundImage = background:addSpriteComponent()
 backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350, 200, 0))
 print("Hello From DemoScene")
 
+local h = 100
+local HealthUI = manager:addEntity("HealthUI")
+local healthUI = HealthUI:addTextComponent()
+healthUI:Text(tostring(h), 16, Vec3(600.0, 0.0, 0.0), Vec3(1.0, 1.0, 1.0), Vec3(1.0, 1.0, 1.0))
+
 local CONTROLLERTHRESHOLD = 8000
 
 req("player")
@@ -35,6 +40,11 @@ function on_event(event)
 end
 
 function update(delta_time)
+
+    h = h - 1
+    healthUI:setText(tostring(h))
+
+
     if math.abs(controller_state["right_stick_x"]) > CONTROLLERTHRESHOLD or
         math.abs(controller_state["right_stick_y"]) > CONTROLLERTHRESHOLD then
         updateArrowPosition()

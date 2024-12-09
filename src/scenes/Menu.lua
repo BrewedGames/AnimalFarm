@@ -26,7 +26,6 @@ local overlaySprite = overlay:addSpriteComponent()
 
 
 
-
 local restruantModel = restruant:addMeshComponent()
 
 local startbutton = startButton:addButtonComponent()

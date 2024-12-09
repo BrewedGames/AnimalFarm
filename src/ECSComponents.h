@@ -153,7 +153,7 @@ public:
 	float GetWidth() { return image_width; };
 	float GetHeight() { return image_height; };
 	void setRotation(float angle) { rotation = angle; }
-    float getRotation() const { return rotation; }
+	float getRotation() const { return rotation; }
 	Vec3 getPos() { return pos; };
 	void setPos(Vec3 _pos) { pos = _pos; };
 	void setPosX(float _x) { pos.x = _x; };
@@ -163,6 +163,36 @@ public:
 	float Y() { return pos.y; };
 	float Z() { return pos.z; };
 	const char *GetSpritePath() { return filename; };
+};
+
+class TextComponent : public ECSComponent
+{
+private:
+	const char *text;
+	int fontSize;
+	Vec3 pos;
+	Vec3 color;
+	Vec3 scale;
+
+public:
+	void Text(const char *_text, int _fontSize = 16, Vec3 _pos = Vec3(0.0f, 0.0f, 0.0f), Vec3 _color = Vec3(1.0f, 1.0f, 1.0f), Vec3 _scale = Vec3(1.0f, 1.0f, 1.0f));
+	TextComponent();
+	~TextComponent();
+	bool OnCreate();
+	void OnDestroy();
+	void Update(float deltaTime);
+	void Render() const;
+	const char *getText() { return text; }
+	int getFontSize() { return fontSize; }
+	Vec3 getPos() { return pos; }
+	Vec3 getColor() { return color; }
+	Vec3 getScale() { return scale; }
+	void setPos(Vec3 _pos) { pos = _pos; };
+	void setColor(Vec3 _color) { color = _color; };
+	void setScale(Vec3 _scale) { scale = _scale; };
+	void setText(const char *_text) { text = _text; }
+	void setFontSize(int _fontSize) { fontSize = _fontSize; }
+
 };
 
 class ColliderComponent : public ECSComponent
@@ -287,7 +317,6 @@ public:
 	inline int getImageHeight() const { return texture->getImageHeight(); }
 };
 
-
 class ButtonComponent : public ECSComponent
 {
 private:
@@ -296,21 +325,19 @@ private:
 	bool isHovered = false;
 	int buttonState = -1;
 
-
 	struct Button
 	{
 		Vec2 position;
 		Vec2 size;
- 		GLuint ButtonTexture;
-        GLuint ButtonHoveredTexture;
-        GLuint ButtonPressedTexture;
+		GLuint ButtonTexture;
+		GLuint ButtonHoveredTexture;
+		GLuint ButtonPressedTexture;
 	};
 
 	Button button;
 
-	void RenderTexturedButton(ImDrawList* drawList, GLuint ButtonTextureID, GLuint ButtonHoveredTextureID, GLuint ButtonPressedTextureID, ImVec2 position, ImVec2 size);
+	void RenderTexturedButton(ImDrawList *drawList, GLuint ButtonTextureID, GLuint ButtonHoveredTextureID, GLuint ButtonPressedTextureID, ImVec2 position, ImVec2 size);
 	GLuint LoadTexture(const char *filePath);
-	
 
 public:
 	ButtonComponent();
@@ -320,10 +347,18 @@ public:
 	void Update(float deltaTime);
 	void Render() const;
 
-//	void LoadButton(SDL_GameController * _controller ,const char* ButtonTexture, const char* ButtonHoveredTexture, const char* ButtonPressedTexture, Vec2 position, float scale);
-	void LoadButton(const char* ButtonTexture, const char* ButtonHoveredTexture, const char* ButtonPressedTexture, Vec2 position, float scale);
-	void setButtonHovered(bool hovered) { isHovered = hovered;  buttonState = 0; }
-	void setButtonPressed(bool pressed) { isPressed = pressed; buttonState = 1; }
+	//	void LoadButton(SDL_GameController * _controller ,const char* ButtonTexture, const char* ButtonHoveredTexture, const char* ButtonPressedTexture, Vec2 position, float scale);
+	void LoadButton(const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale);
+	void setButtonHovered(bool hovered)
+	{
+		isHovered = hovered;
+		buttonState = 0;
+	}
+	void setButtonPressed(bool pressed)
+	{
+		isPressed = pressed;
+		buttonState = 1;
+	}
 	bool isButtonPressed() { return isPressed; }
 	bool isButtonHovered() { return isHovered; }
 	int getButtonState() { return buttonState; }
