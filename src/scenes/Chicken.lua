@@ -133,15 +133,55 @@ end
 function on_event(event)
     if event.type == "keydown" then
         key_states[event.key] = true
+        
+        if key_states["down"] then setPlayerDown(true) end
+        if key_states["right"] then setPlayerRight(true) end
+        if key_states["up"] then setPlayerUp(true) end
+        if key_states["left"] then setPlayerLeft(true) end
+        if event.key == "z" then triggerDash() end
+
     elseif event.type == "keyup" then
         key_states[event.key] = false
+
+        if event.key == "down" then setPlayerDown(false) end
+        if event.key == "right" then setPlayerRight(false) end
+        if event.key == "up" then setPlayerUp(false) end
+        if event.key == "left" then setPlayerLeft(false) end
+    end
+    if event.type == "controllerbuttondown" then
+        controller_state[event.button] = true
+        if controller_state["button_a"] then triggerDash() end
+        
+    elseif event.type == "controllerbuttonup" then
+        controller_state[event.button] = false
     end
 end
 
 -- Update function called every frame
 function update(delta_time)
 
-    handlePlayerInput(key_states, playerSprite, delta_time) --update player
+    
+    if math.abs(controller_state["right_stick_x"]) > CONTROLLERTHRESHOLD or
+        math.abs(controller_state["right_stick_y"]) > CONTROLLERTHRESHOLD then
+        updateArrowPosition()
+    end
+    if controller_state["left_stick_x"] > CONTROLLERTHRESHOLD then
+        setPlayerRight(true)
+    elseif controller_state["left_stick_x"] < -CONTROLLERTHRESHOLD then
+        setPlayerLeft(true)
+    else
+        setPlayerRight(false)
+        setPlayerLeft(false)
+    end
+    if controller_state["left_stick_y"] > CONTROLLERTHRESHOLD then
+        setPlayerDown(true)
+    elseif controller_state["left_stick_y"] < -CONTROLLERTHRESHOLD then
+        setPlayerUp(true)
+    else
+        setPlayerDown(false)
+        setPlayerUp(false)
+    end
+    updatePlayer(delta_time)
     playerCollider:setPos(playerSprite:getPos()) -- Update player collider position
 
     throwSlipper(delta_time) -- Handle slipper throwing

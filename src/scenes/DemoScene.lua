@@ -3,10 +3,16 @@ local backgroundImage = background:addSpriteComponent()
 backgroundImage:loadSprite("./static/sample_background.jpg", 1920, 1080, Vec3(350, 200, 0))
 print("Hello From DemoScene")
 
+
+
 local h = 100
 local HealthUI = manager:addEntity("HealthUI")
-local healthUI = HealthUI:addTextComponent()
-healthUI:Text(tostring(h), 16, Vec3(600.0, 0.0, 0.0), Vec3(1.0, 1.0, 1.0), Vec3(1.0, 1.0, 1.0))
+local healthText = HealthUI:addTextComponent()
+local healthModel = HealthUI:addMeshComponent()
+healthText:Text(tostring(h), 16, Vec3(600.0, 0.0, 0.0), Vec3(1.0, 1.0, 1.0), Vec3(1.0, 1.0, 1.0))
+healthModel:loadMesh("./src/meshes/heart.obj", "./src/textures/heart.png", Vec3(600.0, 700.0, 0.0), Vec3(10, 10, 10), Vec3(90, 0, 0))
+
+local angle = 0
 
 local CONTROLLERTHRESHOLD = 8000
 
@@ -42,7 +48,10 @@ end
 function update(delta_time)
 
     h = h - 1
-    healthUI:setText(tostring(h))
+    healthText:setText(tostring(h))
+
+    angle = angle + 30.0 * delta_time
+    healthModel:setRotation(Vec3(angle, 0, 0))
 
 
     if math.abs(controller_state["right_stick_x"]) > CONTROLLERTHRESHOLD or
