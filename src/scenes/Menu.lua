@@ -47,7 +47,8 @@ moonSprite:loadSprite("./static/Moon.png", 150, 150, Vec3(1155, 600, 0))
 
 
 audio:setAudio("./src/audio/Beauty Flow.mp3", true)
-audio:setVolume(50) 
+audio:setVolume(50)
+audio:setLoop(true)
 audio:Play()
 
 

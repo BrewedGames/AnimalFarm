@@ -287,7 +287,8 @@ void Bridge::SetupBridge()
                                      "Play", &AudioComponent::Play,
                                      "Stop", &AudioComponent::Stop,
                                      "Pause", &AudioComponent::Pause,
-                                     "Resume", &AudioComponent::Resume);
+                                     "Resume", &AudioComponent::Resume,
+                                     "setLoop", &AudioComponent::SetLoop);
 
     lua.new_usertype<ButtonComponent>("ButtonComponent",
                                       "loadButton", sol::overload([this](ButtonComponent &button, const char *ButtonTexture, const char *ButtonHoveredTexture, const char *ButtonPressedTexture, Vec2 position, float scale)

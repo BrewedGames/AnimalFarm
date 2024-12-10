@@ -1,3 +1,10 @@
+local backgroundMusic = manager:addEntity("BackgroundMusic")
+local audio = backgroundMusic:addAudioComponent()
+audio:setAudio("./src/audio/Mercury.wav", true)
+audio:setVolume(50)
+audio:setLoop(true)
+audio:Play()
+
 local HyenaSpriteWidth = 145
 local HyenaSpriteHeight = 157.38
 

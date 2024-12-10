@@ -1,3 +1,10 @@
+local backgroundMusic = manager:addEntity("BackgroundMusic")
+local audio = backgroundMusic:addAudioComponent()
+audio:setAudio("./src/audio/BossMain.wav", true)
+audio:setVolume(50)
+audio:setLoop(true)
+audio:Play()
+
 -- Newton-Raphson square root function
 local function sqrt(number)
     if number <= 0 then return 0 end -- Ensure the number is positive
